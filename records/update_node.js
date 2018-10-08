@@ -98,7 +98,7 @@ module.exports = (args, cbk) => {
       const table = `${args.aws_dynamodb_table_prefix}-nodes`;
       const sockets = {};
 
-      args.sockets.forEach(n => sockets[n] = true);
+      (args.sockets || []).forEach(n => sockets[n] = true);
 
       // Create the node row
       const item = {
@@ -145,7 +145,7 @@ module.exports = (args, cbk) => {
         changes.networks = {add: args.network};
       }
 
-      if (getNode.item.sockets.join() !== args.sockets.join()) {
+      if (getNode.item.sockets.join() !== (args.sockets || []).join()) {
         changes.sockets = args.sockets;
       }
 
