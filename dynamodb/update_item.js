@@ -45,6 +45,7 @@ module.exports = ({changes, db, expect, table, where}, cbk) => {
   const expected = [];
   const names = {};
   const operations = [];
+  const removes = [];
   const vals = {};
 
   Object.keys(changes).forEach(attr => {
@@ -53,7 +54,13 @@ module.exports = ({changes, db, expect, table, where}, cbk) => {
     if (!!changes[attr].add) {
       vals[`:${attr}`] = ddbRowFormattedValue(changes[attr].add);
       operations.push(`#${attr} = #${attr} + :${attr}`);
-    } else if (changes[attr].set !== undefined) {
+    }
+
+    if (changes[attr].remove) {
+      removes.push(`#${attr}`);
+    }
+
+    if (changes[attr].set !== undefined) {
       vals[`:${attr}`] = ddbRowFormattedValue(changes[attr].set);
       operations.push(`#${attr} = :${attr}`);
     }
@@ -68,6 +75,9 @@ module.exports = ({changes, db, expect, table, where}, cbk) => {
     return expected.push(`#${attr} = :equals_${attr}`);
   });
 
+  const removeCommands = !!removes.length ? `REMOVE ${removes.join(',')}` : '';
+  const setCommands = !!operations.length ? `SET ${operations.join(',')}` : '';
+
   return db.updateItem({
     ConditionExpression: expected.join(' and '),
     ExpressionAttributeNames: names,
@@ -75,7 +85,7 @@ module.exports = ({changes, db, expect, table, where}, cbk) => {
     Key: key,
     ReturnValues: 'ALL_NEW',
     TableName: table,
-    UpdateExpression: `SET ${operations.join(',')}`,
+    UpdateExpression: [setCommands, removeCommands].join(' '),
   },
   (err, res) => {
     if (!!err && !err.code) {

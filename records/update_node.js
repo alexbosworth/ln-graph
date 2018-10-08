@@ -100,6 +100,8 @@ module.exports = (args, cbk) => {
 
       (args.sockets || []).forEach(n => sockets[n] = true);
 
+      const uniqueSockets = Object.keys(sockets);
+
       // Create the node row
       const item = {
         alias: args.alias,
@@ -107,7 +109,7 @@ module.exports = (args, cbk) => {
         key: Buffer.from(args.public_key, 'hex'),
         networks: [args.network],
         rev: 1,
-        sockets: Object.keys(sockets),
+        sockets: uniqueSockets.length ? uniqueSockets : undefined,
         updated_at: args.updated_at,
       };
 
@@ -133,7 +135,9 @@ module.exports = (args, cbk) => {
       }
 
       const changes = {};
+      const existingSockets = getNode.item.sockets || [];
       const expect = {rev: getNode.item.rev};
+      const sockets = args.sockets || [];
       const table = `${args.aws_dynamodb_table_prefix}-nodes`;
       const where = {key: Buffer.from(args.public_key, 'hex')};
 
@@ -145,8 +149,8 @@ module.exports = (args, cbk) => {
         changes.networks = {add: args.network};
       }
 
-      if (getNode.item.sockets.join() !== (args.sockets || []).join()) {
-        changes.sockets = args.sockets;
+      if (existingSockets.sort().join() !== sockets.sort().join()) {
+        changes.sockets = !sockets.length ? {remove: true} : {set: sockets};
       }
 
       if (!Object.keys(changes).length) {
