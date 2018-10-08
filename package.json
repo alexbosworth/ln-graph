@@ -1,0 +1,21 @@
+{
+  "author": "Alex Bosworth",
+  "dependencies": {
+    "async": "2.6.1",
+    "aws-sdk": "2.263.1",
+    "bn.js": "4.11.8",
+    "vali-date": "1.0.0"
+  },
+  "description": "Record keeping for Lightning Network graph updates",
+  "engines": {
+    "node": "8.12.0",
+    "npm": "6.4.1"
+  },
+  "license": "MIT",
+  "main": "index.js",
+  "name": "ln-graph",
+  "scripts": {
+    "start": "node server"
+  },
+  "version": "0.0.1"
+}

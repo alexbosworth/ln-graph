@@ -1,0 +1,8 @@
+{
+  "ddb_default_concurrency_limit": 5,
+  "ddb_default_region": "us-east-1",
+  "ddb_default_max_retries": 10,
+  "ddb_default_timeout": 10000,
+  "ddb_version": "2012-08-10"
+}
+
