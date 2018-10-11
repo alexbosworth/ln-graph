@@ -3,7 +3,7 @@ const asyncRetry = require('async/retry');
 const registerChannelUpdate = require('./register_channel_update');
 
 const retryInterval = retryCount => 50 * Math.pow(2, retryCount);
-const retryTimes = 10;
+const retryTimes = 15;
 
 /** Update a channel record
 
