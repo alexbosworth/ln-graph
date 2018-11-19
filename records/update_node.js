@@ -9,8 +9,8 @@ const retryTimes = 15;
 
   {
     alias: <Alias String>
-    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_secret_access_key: <AWS Secret Access Key String>
     network: <Network Name String>
     public_key: <Node Public Key Hex String>

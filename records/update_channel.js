@@ -8,8 +8,8 @@ const retryTimes = 15;
 /** Update a channel record
 
   {
-    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_secret_access_key: <AWS Secret Access Key String>
     [base_fee_mtokens]: <Channel Base Fee Millitokens String>
     capacity: <Channel Capacity Tokens Number>

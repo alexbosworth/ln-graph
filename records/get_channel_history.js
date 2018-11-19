@@ -9,8 +9,8 @@ const defaultHistoryLimit = 6;
 /** Get the history of a channel
 
   {
-    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_secret_access_key: <AWS Secret Access Key String>
     id: <Channel Id String>
     [limit]: <Limit of Historical Entries Number>
@@ -36,12 +36,12 @@ const defaultHistoryLimit = 6;
   }
 */
 module.exports = (args, cbk) => {
-  if (!args.aws_dynamodb_table_prefix) {
-    return cbk([400, 'ExpectedAwsTablePrefixForChannelHistoryLookup']);
+  if (!args.aws_access_key_id) {
+    return cbk([400, 'ExpectedAwsAccessKeyIdForChannelHistoryLookup']);
   }
 
-  if (!args.aws_access_key_id) {
-    return cbk([400, 'ExpectedAwsAccessKeyIdForChannelHistoryLookup'])
+  if (!args.aws_dynamodb_table_prefix) {
+    return cbk([400, 'ExpectedAwsTablePrefixForChannelHistoryLookup']);
   }
 
   if (!args.aws_secret_access_key) {

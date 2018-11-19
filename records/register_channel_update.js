@@ -12,8 +12,8 @@ const decimalBase = 10;
 /** Record a node update to the database
 
   {
-    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_secret_access_key: <AWS Secret Access Key String>
     capacity: <Capacity Tokens Number>
     channel_id: <Channel Id String>
