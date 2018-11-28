@@ -75,6 +75,7 @@ module.exports = (args, cbk) => {
   }
 
   const fresh = ['created_at'];
+  const hops = args.hops.map(n => new BN(n, decBase).toBuffer());
   const pair = `${args.from_public_key}${args.to_public_key}`;
   const table = `${args.aws_dynamodb_table_prefix}-spend-activity`;
 
@@ -82,7 +83,7 @@ module.exports = (args, cbk) => {
   const item = {
     created_at: args.created_at,
     from_public_key: args.from_public_key,
-    hops: args.hops.map(n => new BN(n, decBase).toBuffer().toString('hex')),
+    hops: hops.map(n => n.toString('hex')).join(':'),
     pair: createHash('sha256').update(Buffer.from(pair, 'hex')).digest(),
     to_public_key: args.to_public_key,
     tokens: args.tokens,

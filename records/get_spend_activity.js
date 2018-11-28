@@ -78,10 +78,10 @@ module.exports = (args, cbk) => {
     }
 
     try {
-      const updates = res.items.map(item => ({
+      const spends = res.items.map(item => ({
         created_at: item.created_at,
         from_public_key: item.from_public_key,
-        hops: item.hops.map(id => {
+        hops: item.hops.split(':').map(id => {
           return channelIdFromBuffer({id: Buffer.from(id, 'hex')});
         }),
         tokens: item.tokens,
@@ -89,7 +89,7 @@ module.exports = (args, cbk) => {
         type: item.type,
       }));
 
-      return cbk(null, {updates});
+      return cbk(null, {spends});
     } catch (err) {
       return cbk([503, 'FailedToParseSpendActivityItems', err]);
     }
