@@ -12,6 +12,10 @@ const decBase = 10;
   <Unmarshalled Object>
 */
 module.exports = row => {
+  if (!row) {
+    throw new Error('ExpectedDdbRowObjectToCastAsPlainObject');
+  }
+
   const res = {};
 
   Object.keys(row).forEach(attr => {

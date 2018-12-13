@@ -12,7 +12,7 @@ module.exports = obj => {
   const row = {};
 
   Object.keys(obj)
-    .filter(k => obj[k] !== undefined)
+    .filter(k => obj[k] !== undefined && obj[k] !== '')
     .forEach(k => row[k] = ddbRowFormattedValue(obj[k]));
 
   return row;

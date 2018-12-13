@@ -1,0 +1,7 @@
+{
+  "decBase": 10,
+  "endian": "be",
+  "hexBase": 16,
+  "maxUint64": "FFFFFFFFFFFFFFFF"
+}
+

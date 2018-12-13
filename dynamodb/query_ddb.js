@@ -40,7 +40,9 @@ module.exports = (args, cbk) => {
       attributeNames[`#${attr}`] = attr;
 
       Object.keys(args.where[attr]).forEach(comparison => {
-        attributeValues[`:${attr}`] = ddbRowFormattedValue(args.where[attr][comparison]);
+        const where = args.where[attr][comparison];
+
+        attributeValues[`:${attr}`] = ddbRowFormattedValue(where);
 
         switch (comparison) {
         case 'eq':

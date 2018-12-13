@@ -1,8 +1,10 @@
 const ddb = require('./ddb');
-const getItem = require('./get_item');
-const putItem = require('./put_item');
-const query = require('./query');
-const updateItem = require('./update_item');
+const getDdbItem = require('./get_ddb_item');
+const putDdbItem = require('./put_ddb_item');
+const queryDdb = require('./query_ddb');
+const updateDdbItem = require('./update_ddb_item');
 
-module.exports = {ddb, getItem, putItem, query, updateItem};
+/** Dynamodb Access
+*/
+module.exports = {ddb, getDdbItem, putDdbItem, queryDdb, updateDdbItem};
 

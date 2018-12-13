@@ -2,22 +2,24 @@ const asyncRetry = require('async/retry');
 
 const registerChannelUpdate = require('./register_channel_update');
 
+const errCodeIndex = 0;
 const retryInterval = retryCount => 50 * Math.pow(2, retryCount);
 const retryTimes = 15;
+const serverErr = 500;
 
 /** Update a channel record
 
   {
-    aws_access_key_id: <AWS Access Key Id String>
-    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
-    aws_secret_access_key: <AWS Secret Access Key String>
+    [aws_access_key_id]: <AWS Access Key Id String>
+    [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
+    [aws_secret_access_key]: <AWS Secret Access Key String>
     [base_fee_mtokens]: <Channel Base Fee Millitokens String>
     capacity: <Channel Capacity Tokens Number>
     channel_id: <Channel Id String>
-    [close_height]: <Close Height Number>
     [cltv_delta]: <Channel CLTV Delta Number>
     [fee_rate]: <Channel Feel Rate In Millitokens Per Million Number>
     [is_disabled]: <Channel Is Disabled Bool>
+    [lmdb_path]: <LMDB Path String>
     [min_htlc_mtokens]: <Channel Minimum HTLC Millitokens String>
     network: <Network Name String>
     [public_keys]: [<Announcing Public Key>, <Target Public Key String>]
@@ -51,13 +53,13 @@ module.exports = (args, cbk) => {
 
   update.capacity = args.capacity;
   update.channel_id = args.channel_id;
-  update.close_height = args.close_height;
   update.network = args.network;
   update.transaction_id = args.transaction_id;
   update.transaction_vout = args.transaction_vout;
 
   return asyncRetry(
     {
+      errorFilter: err => Array.isArray(err) && err[errCodeIndex] >= serverErr,
       interval: retryInterval,
       times: retryTimes,
     },
@@ -68,7 +70,7 @@ module.exports = (args, cbk) => {
         aws_secret_access_key: args.aws_secret_access_key,
         capacity: update.capacity,
         channel_id: update.channel_id,
-        close_height: update.close_height,
+        lmdb_path: args.lmdb_path,
         network: update.network,
         node1_base_fee_mtokens: update.node1_base_fee_mtokens,
         node1_cltv_delta: update.node1_cltv_delta,

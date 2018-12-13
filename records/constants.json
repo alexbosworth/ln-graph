@@ -1,0 +1,25 @@
+{
+  "activityDb": "edge-activity",
+  "activityTypes": ["stuck_htlc", "success", "temporary_channel_failure"],
+  "chainIdHexLen": 2,
+  "chanAttributes": [
+    "base_fee_mtokens",
+    "cltv_delta",
+    "fee_rate",
+    "is_disabled",
+    "min_htlc_mtokens",
+    "public_key",
+    "updated_at"
+  ],
+  "chanIdHexLen": 16,
+  "chansDb": "channels",
+  "colorLen": 7,
+  "decBase": 10,
+  "nodeChannelsDb": "node-channels",
+  "nodeNumbers": ["1", "2"],
+  "nodesDb": "nodes",
+  "notFound": -1,
+  "pkHexLen": 66,
+  "updatesDb": "channel-updates"
+}
+

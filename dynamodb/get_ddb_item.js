@@ -61,6 +61,10 @@ module.exports = (args, cbk) => {
       return cbk(null, {});
     }
 
+    if (!res.Item) {
+      return cbk([503, 'ExpectedResultItemFromDynamoDb', res]);
+    }
+
     try {
       return cbk(null, {item: objFromDdbRow(res.Item)});
     } catch (err) {

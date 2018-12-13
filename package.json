@@ -2,15 +2,14 @@
   "author": "Alex Bosworth",
   "dependencies": {
     "async": "2.6.1",
-    "aws-sdk": "2.364.0",
     "bn.js": "4.11.8",
-    "ln-service": "27.0.0",
+    "aws-sdk": "2.375.0",
+    "node-lmdb": "0.6.0",
     "vali-date": "1.0.0"
   },
   "description": "Record keeping for Lightning Network graph updates",
-  "engines": {
-    "node": "10.13.0",
-    "npm": "6.4.1"
+  "devDependencies": {
+    "tap": "12.1.1"
   },
   "license": "MIT",
   "main": "index.js",
@@ -20,7 +19,7 @@
     "url": "https://github.com/alexbosworth/ln-graph.git"
   },
   "scripts": {
-    "start": "node server"
+    "test": "tap test/dates/*.js test/statistics/*.js"
   },
-  "version": "0.2.0"
+  "version": "1.0.0"
 }
