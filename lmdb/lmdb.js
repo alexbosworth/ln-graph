@@ -40,6 +40,26 @@ module.exports = ({path}, cbk) => {
     env = environment;
   }
 
+  const kill = ({}) => {
+    if (!env) {
+      return;
+    }
+
+    Object.keys(dbs).forEach(db => {
+      dbs[db].close();
+
+      delete dbs[db];
+
+      return;
+    });
+
+    env.close();
+
+    env = null;
+
+    return;
+  };
+
   const registerDb = ({db}) => {
     try {
       dbs[db] = dbs[db] || env.openDbi({create: true, name: db});
@@ -50,6 +70,6 @@ module.exports = ({path}, cbk) => {
     return dbs[db];
   };
 
-  return {env, registerDb};
+  return {env, kill, registerDb};
 };
 

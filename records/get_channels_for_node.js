@@ -75,7 +75,7 @@ module.exports = args => {
         },
         {
           base_fee_mtokens: item.node2_base_fee_mtokens,
-          cltv_delta: item.node_cltv_delta,
+          cltv_delta: item.node2_cltv_delta,
           fee_rate: item.node2_fee_rate,
           is_disabled: item.node2_is_disabled,
           min_htlc_mtokens: item.node2_min_htlc_tokens,

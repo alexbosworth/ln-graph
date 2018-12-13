@@ -9,7 +9,9 @@
   },
   "description": "Record keeping for Lightning Network graph updates",
   "devDependencies": {
-    "tap": "12.1.1"
+    "rimraf": "2.6.2",
+    "tap": "12.1.1",
+    "uuid": "3.3.0"
   },
   "license": "MIT",
   "main": "index.js",
@@ -19,7 +21,7 @@
     "url": "https://github.com/alexbosworth/ln-graph.git"
   },
   "scripts": {
-    "test": "tap test/dates/*.js test/statistics/*.js"
+    "test": "tap test/dates/*.js test/lmdb/*.js test/statistics/*.js"
   },
   "version": "1.0.0"
 }
