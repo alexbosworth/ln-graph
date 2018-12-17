@@ -2,8 +2,9 @@
   "author": "Alex Bosworth",
   "dependencies": {
     "async": "2.6.1",
-    "bn.js": "4.11.8",
     "aws-sdk": "2.375.0",
+    "bn.js": "4.11.8",
+    "ln-service": "30.0.0",
     "node-lmdb": "0.6.0",
     "vali-date": "1.0.0"
   },
@@ -23,5 +24,5 @@
   "scripts": {
     "test": "tap test/dates/*.js test/lmdb/*.js test/statistics/*.js"
   },
-  "version": "1.0.0"
+  "version": "1.1.0"
 }

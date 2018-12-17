@@ -25,7 +25,6 @@ const serverErr = 500;
     [public_keys]: [<Announcing Public Key>, <Target Public Key String>]
     transaction_id: <Channel Transaction Id String>
     transaction_vout: <Channel Transaction Output Index Number>
-    type: <Row Type String>
     updated_at: <Update Received At ISO 8601 Date String>
   }
 */

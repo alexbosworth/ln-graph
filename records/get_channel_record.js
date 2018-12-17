@@ -30,6 +30,7 @@ const networks = require('./conf/networks');
       }]
       transaction_id: <Transaction Id Hex String>
       transaction_vout: <Transaction Output Index Number>
+      type: <Row Type String>
       [updated_at]: <Channel Last Updated At ISO 8601 Date String>
     }
   }

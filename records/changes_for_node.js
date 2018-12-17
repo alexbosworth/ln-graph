@@ -41,6 +41,10 @@ module.exports = ({chain, existing, update}) => {
     changes.alias = {set: update.alias};
   }
 
+  if (update.alias === '') {
+    changes.alias = {remove: true};
+  }
+
   if (existing.chains.indexOf(chain) === notFound) {
     changes.chains = {add: chain};
   }

@@ -10,6 +10,7 @@ const {putLmdbItem} = require('./../lmdb');
 
   {
     capacity: <Maximum Tokens Number>
+    [close_height]: <Channel Close Height Number>
     id: <Channel Id Hex String>
     lmdb_path: <LMDB Path String>
     network: <Network Name String>
@@ -47,6 +48,7 @@ module.exports = args => {
   try {
     const channel = {
       capacity: args.capacity,
+      close_height: args.close_height,
       node1_base_fee_mtokens: policy1.base_fee_mtokens,
       node1_cltv_delta: policy1.cltv_delta,
       node1_fee_rate: policy1.fee_rate,

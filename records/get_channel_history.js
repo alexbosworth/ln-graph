@@ -73,6 +73,7 @@ module.exports = (args, cbk) => {
   }
 
   let db;
+  const where = {key: {eq: `${chain}${args.id}`}};
 
   try {
     db = ddb({
@@ -85,10 +86,10 @@ module.exports = (args, cbk) => {
 
   return queryDdb({
     db,
+    where,
     is_descending: true,
     limit: args.limit || defaultHistoryLimit,
     table: `${args.aws_dynamodb_table_prefix}-${updatesDb}`,
-    where: {key: {eq: `${chain}${args.id}`}},
   },
   (err, res) => {
     if (!!err) {

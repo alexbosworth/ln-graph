@@ -494,6 +494,10 @@ module.exports = (args, cbk) => {
         .filter(attr => ddbChanUpdate.updates[attr] !== undefined)
         .forEach(attr => changes[attr] = {set: ddbChanUpdate.updates[attr]});
 
+      Object.keys(ddbChanUpdate.updates)
+        .filter(attr => ddbChanUpdate.updates[attr] === '')
+        .forEach(attr => changes[attr] = {remove: true});
+
       return updateDdbItem({changes, db, expect, table, where: {key}}, cbk);
     }],
 
