@@ -88,7 +88,7 @@ module.exports = (args, cbk) => {
       }
 
       if (args.alias === '') {
-        changes[`node${n}_alias`] = {remove: args.alias};
+        changes[`node${n}_alias`] = {remove: true};
       }
 
       if (!!args.color) {
