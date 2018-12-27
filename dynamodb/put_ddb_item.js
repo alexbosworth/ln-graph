@@ -1,4 +1,3 @@
-const ddbRowFormattedValue = require('./ddb_row_formatted_value');
 const objAsDdbRow = require('./obj_as_ddb_row');
 
 /** Commit a write to DynamoDb

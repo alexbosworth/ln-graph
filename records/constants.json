@@ -15,6 +15,7 @@
   "chansDb": "channels",
   "colorLen": 7,
   "decBase": 10,
+  "defaultHistoryLimit": 6,
   "nodeChannelsDb": "node-channels",
   "nodeNumbers": ["1", "2"],
   "nodesDb": "nodes",

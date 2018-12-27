@@ -1,8 +1,8 @@
 const {chansDb} = require('./constants');
+const {chainId} = require('./../chains');
 const {chainIdHexLen} = require('./constants');
 const {getLmdbItem} = require('./../lmdb');
 const {lmdb} = require('./../lmdb');
-const networks = require('./conf/networks');
 const {nodeChannelsDb} = require('./constants');
 const {pkHexLen} = require('./constants');
 const {queryLmdb} = require('./../lmdb');
@@ -43,48 +43,60 @@ module.exports = args => {
     throw new Error('ExpectedNetworkForNodeChannels');
   }
 
-  if (!args.public_key) {
+  if (!args.public_key || args.public_key.length !== pkHexLen) {
     throw new Error('ExpectedPublicKeyToGetChannelsForNode');
   }
 
-  const chainId = networks.chain_ids[args.network];
+  let chain;
   const db = nodeChannelsDb;
 
-  const where = {starts_with: `${args.public_key}${chainId}`};
+  try {
+    chain = chainId({network: args.network}).chain_id;
+  } catch (err) {
+    throw new Error('ExpectedValidNetworkToGetChannelsForNode');
+  }
+
+  const where = {starts_with: `${args.public_key}${chain}`};
 
   try {
     const {items} = queryLmdb({db, where, lmdb: lmdb({path: args.lmdb_path})});
 
     const chanIds = items.map(({key}) => key.slice(pkHexLen + chainIdHexLen));
 
-    const channels = chanIds.map(id => {
-      const {item} = getLmdbItem({
-        db: chansDb,
-        key: `${chainId}${id}`,
-        lmdb: lmdb({path: args.lmdb_path}),
-      });
+    const channels = chanIds
+      .map(id => {
+        const {item} = getLmdbItem({
+          db: chansDb,
+          key: `${chain}${id}`,
+          lmdb: lmdb({path: args.lmdb_path}),
+        });
 
-      const policies = [
-        {
-          base_fee_mtokens: item.node1_base_fee_mtokens,
-          cltv_delta: item.node1_cltv_delta,
-          fee_rate: item.node1_fee_rate,
-          is_disabled: item.node1_is_disabled,
-          min_htlc_mtokens: item.node1_min_htlc_tokens,
-          public_key: item.node1_public_key || undefined,
-        },
-        {
-          base_fee_mtokens: item.node2_base_fee_mtokens,
-          cltv_delta: item.node2_cltv_delta,
-          fee_rate: item.node2_fee_rate,
-          is_disabled: item.node2_is_disabled,
-          min_htlc_mtokens: item.node2_min_htlc_tokens,
-          public_key: item.node2_public_key || undefined
-        },
-      ];
+        if (!item || !!item.close_height) {
+          return;
+        }
 
-      return {id, policies, capacity: item.capacity};
-    });
+        const policies = [
+          {
+            base_fee_mtokens: item.node1_base_fee_mtokens,
+            cltv_delta: item.node1_cltv_delta,
+            fee_rate: item.node1_fee_rate,
+            is_disabled: item.node1_is_disabled,
+            min_htlc_mtokens: item.node1_min_htlc_tokens,
+            public_key: item.node1_public_key || undefined,
+          },
+          {
+            base_fee_mtokens: item.node2_base_fee_mtokens,
+            cltv_delta: item.node2_cltv_delta,
+            fee_rate: item.node2_fee_rate,
+            is_disabled: item.node2_is_disabled,
+            min_htlc_mtokens: item.node2_min_htlc_tokens,
+            public_key: item.node2_public_key || undefined
+          },
+        ];
+
+        return {id, policies, capacity: item.capacity};
+      })
+      .filter(n => !!n);
 
     return {channels};
   } catch (err) {

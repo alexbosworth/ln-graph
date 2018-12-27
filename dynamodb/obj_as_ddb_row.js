@@ -5,15 +5,22 @@ const ddbRowFormattedValue = require('./ddb_row_formatted_value');
   @param
   <Regular Object>
 
+  @throws
+  <Error>
+
   @returns
   <Dynamodb Row Object>
 */
 module.exports = obj => {
   const row = {};
 
-  Object.keys(obj)
-    .filter(k => obj[k] !== undefined && obj[k] !== '')
-    .forEach(k => row[k] = ddbRowFormattedValue(obj[k]));
+  try {
+    Object.keys(obj)
+      .filter(k => obj[k] !== undefined && obj[k] !== '')
+      .forEach(k => row[k] = ddbRowFormattedValue(obj[k]));
+  } catch (err) {
+    throw new Error('FailedToConvertObjectToDdbRow');
+  }
 
   return row;
 };

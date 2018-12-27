@@ -85,7 +85,7 @@ module.exports = (args, cbk) => {
     }],
 
     // Channel key
-    key: ['chain', ({chain}, cbk) => cbk(null, `${chain}${args.channel_id}`)],
+    key: ['chain', ({chain}, cbk) => cbk(null, `${chain}${args.id}`)],
 
     // Get the current state of the channel from dynamodb
     getChanFromDdb: ['db', 'key', ({db, key}, cbk) => {
@@ -124,7 +124,11 @@ module.exports = (args, cbk) => {
       ({db, getChanFromDdb, key}, cbk) =>
     {
       // Exit early when there is no open channel to update
-      if (!db || !getChanFromDdb.item || !!getChanFromDdb.item.close_height) {
+      if (!db || !getChanFromDdb || !getChanFromDdb.item) {
+        return cbk();
+      }
+
+      if (!!getChanFromDdb.item.close_height) {
         return cbk();
       }
 
@@ -154,7 +158,7 @@ module.exports = (args, cbk) => {
       try {
         return cbk(null, updateLmdbItem({changes, key, lmdb, db: chansDb}));
       } catch (err) {
-        return cbk([500, 'FailedToUpdateChannelItemInLmdb', err]);
+        return cbk([500, 'FailedToCloseChannelItemInLmdb', err]);
       }
     }],
   },

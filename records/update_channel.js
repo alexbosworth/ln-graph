@@ -27,11 +27,30 @@ const serverErr = 500;
     transaction_vout: <Channel Transaction Output Index Number>
     updated_at: <Update Received At ISO 8601 Date String>
   }
+
+  @returns via cbk
+  {
+    [node1_base_fee_mtokens]: <Base Fee Millitokens String>
+    [node1_cltv_delta]: <CLTV Delta Number>
+    [node1_fee_rate]: <Fee Rate Millitokens Per Million Number>
+    [node1_is_disabled]: <Policy is Disabled Bool>
+    [node1_min_htlc_mtokens]: <Minimum HTLC Millitokens String>
+    [node1_public_key]: <Policy Public Key String>
+    [node1_updated_at]: <Policy Updated At ISO 8601 Date String>
+    [node2_base_fee_mtokens]: <Base Fee Millitokens String>
+    [node2_cltv_delta]: <CLTV Delta Number>
+    [node2_fee_rate]: <Fee Rate Millitokens Per Million Number>
+    [node2_is_disabled]: <Policy is Disabled Bool>
+    [node2_min_htlc_mtokens]: <Minimum HTLC Millitokens String>
+    [node2_public_key]: <Policy Public Key String>
+    [node2_updated_at]: <Policy Updated At ISO 8601 Date String>
+    updated_at: <Updated At ISO 8601 Date String>
+  }
 */
 module.exports = (args, cbk) => {
   const update = {};
 
-  if (!!args.public_keys) {
+  if (Array.isArray(args.public_keys)) {
     const policy = {};
     const [source, target] = args.public_keys;
 
@@ -88,7 +107,20 @@ module.exports = (args, cbk) => {
         transaction_id: update.transaction_id,
         transaction_vout: update.transaction_vout,
       },
-      cbk);
+      (err, res) => {
+        // Avoid reporting conflict errors
+        if (Array.isArray(err)) {
+          const [code] = err;
+
+          return code === 409 ? cbk(null, {}) : cbk(err);
+        }
+
+        if (!!err) {
+          return cbk(err);
+        }
+
+        return cbk(err, res);
+      });
     },
     cbk
   );

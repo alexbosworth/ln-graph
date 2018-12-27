@@ -1,5 +1,8 @@
 const asyncAuto = require('async/auto');
+const asyncEach = require('async/each');
+const asyncMap = require('async/map');
 
+const {chainId} = require('./../chains');
 const {chanIdHexLen} = require('./constants');
 const {chansDb} = require('./constants');
 const channelWithUpdates = require('./channel_with_updates');
@@ -9,12 +12,13 @@ const {decrementingNumberForDate} = require('./../dates');
 const {getDdbItem} = require('./../dynamodb');
 const {getLmdbItem} = require('./../lmdb');
 const {lmdb} = require('./../lmdb');
-const networks = require('./conf/networks');
 const {nodeChannelsDb} = require('./constants');
 const {nodeNumbers} = require('./constants');
+const {nodesDb} = require('./constants');
 const {putDdbItem} = require('./../dynamodb');
 const {putLmdbItem} = require('./../lmdb');
 const {returnResult} = require('./../async');
+const {updateChannelMetadata} = require('./../rows');
 const {updateDdbItem} = require('./../dynamodb');
 const {updateLmdbItem} = require('./../lmdb');
 const {updatesDb} = require('./constants');
@@ -98,7 +102,7 @@ module.exports = (args, cbk) => {
         return cbk([400, 'ExpectedChannelIdForChannelUpdate']);
       }
 
-      if (!args.network || !networks.chain_ids[args.network]) {
+      if (!args.network) {
         return cbk([400, 'ExpectedNetworkForChannelUpdate']);
       }
 
@@ -119,7 +123,11 @@ module.exports = (args, cbk) => {
 
     // Chain for network
     chain: ['validate', ({}, cbk) => {
-      return cbk(null, networks.chain_ids[args.network]);
+      try {
+        return cbk(null, chainId({network: args.network}).chain_id);
+      } catch (err) {
+        return cbk([400, 'ExpectedValidNetworkToRegisterChannelUpdate']);
+      }
     }],
 
     // Get the dynamodb database context
@@ -166,6 +174,10 @@ module.exports = (args, cbk) => {
       const dates = [args.node1_updated_at, args.node2_updated_at];
 
       const [updatedAt] = dates.filter(n => !!n).sort().reverse();
+
+      if (!updatedAt) {
+        return cbk([400, 'ExpectedNodePolicyUpdateTime']);
+      }
 
       return cbk(null, updatedAt);
     }],
@@ -255,14 +267,19 @@ module.exports = (args, cbk) => {
       'getChanFromDdb',
       ({attributeUpdates, getChanFromDdb}, cbk) =>
     {
-      if (!args.aws_access_key_id) {
+      if (!getChanFromDdb) {
         return cbk();
       }
 
-      return cbk(null, channelWithUpdates({
-        item: getChanFromDdb.item || {},
-        update: attributeUpdates,
-      }));
+      try {
+        return cbk(null, channelWithUpdates({
+          item: getChanFromDdb.item || {},
+          update: attributeUpdates,
+        }));
+      } catch (err) {
+        console.log("FAILED CHANNEL WITh UPDATES", err);
+        return cbk([500, 'FailedToDeriveDdbChannelWithUpdates', err]);
+      }
     }],
 
     // Lmdb channel update row
@@ -271,14 +288,18 @@ module.exports = (args, cbk) => {
       'getChanFromLmdb',
       ({attributeUpdates, getChanFromLmdb}, cbk) =>
     {
-      if (!args.lmdb_path) {
+      if (!getChanFromLmdb) {
         return cbk();
       }
 
-      return cbk(null, channelWithUpdates({
-        item: getChanFromLmdb.item || {},
-        update: attributeUpdates,
-      }));
+      try {
+        return cbk(null, channelWithUpdates({
+          item: getChanFromLmdb.item || {},
+          update: attributeUpdates,
+        }));
+      } catch (err) {
+        return cbk([500, 'FailedToDeriveLmdbChannelWithUpdates', err]);
+      }
     }],
 
     // Put the channel update in dynamodb
@@ -288,10 +309,15 @@ module.exports = (args, cbk) => {
       'getUpdateFromDdb',
       'key',
       'updatedAt',
+      'updateDdbChan',
       ({db, ddbChanUpdate, getUpdateFromDdb, key, updatedAt}, cbk) =>
     {
       // Exit early when there's no need to create a history record
-      if (!db || !ddbChanUpdate.updates || !!getUpdateFromDdb.item) {
+      if (!db || !ddbChanUpdate || !ddbChanUpdate.updates) {
+        return cbk();
+      }
+
+      if (!getUpdateFromDdb || !getUpdateFromDdb.item) {
         return cbk();
       }
 
@@ -331,7 +357,11 @@ module.exports = (args, cbk) => {
       ({getUpdateFromLmdb, key, lmdb, lmdbChanUpdate, updatedAt}, cbk) =>
     {
       // Exit early when writing the update is not required
-      if (!lmdb || !lmdbChanUpdate.updates || !!getUpdateFromLmdb.item) {
+      if (!lmdb || !lmdbChanUpdate || !lmdbChanUpdate.updates) {
+        return cbk();
+      }
+
+      if (!getUpdateFromLmdb || !!getUpdateFromLmdb.item) {
         return cbk();
       }
 
@@ -381,7 +411,11 @@ module.exports = (args, cbk) => {
       ({db, ddbChanUpdate, getChanFromDdb, key, updatedAt}, cbk) =>
     {
       // Exit early when there is no need to create the channel
-      if (!db || !!getChanFromDdb.item || !ddbChanUpdate.updated) {
+      if (!db || !getChanFromDdb || !ddbChanUpdate) {
+        return cbk();
+      }
+
+      if (!!getChanFromDdb.item || !ddbChanUpdate.updated) {
         return cbk();
       }
 
@@ -424,7 +458,11 @@ module.exports = (args, cbk) => {
       ({chain, getChanFromLmdb, key, lmdb, lmdbChanUpdate}, cbk) =>
     {
       // Exit early when there is no need to create the lmdb channel
-      if (!lmdb || !lmdbChanUpdate.updated || !!getChanFromLmdb.item) {
+      if (!lmdb || !lmdbChanUpdate || !getChanFromLmdb) {
+        return cbk();
+      }
+
+      if (!lmdbChanUpdate.updated || !!getChanFromLmdb.item) {
         return cbk();
       }
 
@@ -482,7 +520,15 @@ module.exports = (args, cbk) => {
       ({db, ddbChanUpdate, getChanFromDdb, key, updatedAt}, cbk) =>
     {
       // Exit early when there is no existing channel to update
-      if (!db || !getChanFromDdb.item || !ddbChanUpdate.updates) {
+      if (!db || !getChanFromDdb || !ddbChanUpdate) {
+        return cbk();
+      }
+
+      if (!getChanFromDdb.item || !ddbChanUpdate.updates) {
+        return cbk();
+      }
+
+      if (!getChanFromDdb.item.updated_at) {
         return cbk();
       }
 
@@ -510,7 +556,11 @@ module.exports = (args, cbk) => {
       ({getChanFromLmdb, key, lmdb, lmdbChanUpdate}, cbk) =>
     {
       // Exit early when there is no need to update the lmdb channel
-      if (!lmdb || !getChanFromLmdb.item || !lmdbChanUpdate.updates) {
+      if (!lmdb || !getChanFromLmdb || !lmdbChanUpdate) {
+        return cbk();
+      }
+
+      if (!getChanFromLmdb.item || !lmdbChanUpdate.updates) {
         return cbk();
       }
 
@@ -537,6 +587,96 @@ module.exports = (args, cbk) => {
       } catch (err) {
         return cbk([500, 'FailedToUpdateChannelItemInLmdb', err]);
       }
+    }],
+
+    // Update dynamodb's node metadata on the channel
+    updateDdbChannelNodeMetadata: [
+      'db',
+      'ddbChanUpdate',
+      'getChanFromDdb',
+      'key',
+      ({db, ddbChanUpdate, getChanFromDdb, key}, cbk) =>
+    {
+      // Exit early when not updating dynamodb or nothing has been updated
+      if (!db || !ddbChanUpdate || !ddbChanUpdate.updates || !getChanFromDdb) {
+        return cbk();
+      }
+
+      const existing = getChanFromDdb.item || {};
+      const table = `${args.aws_dynamodb_table_prefix}-${nodesDb}`;
+      const {updated} = ddbChanUpdate;
+
+      const node1Pk = existing.node1_public_key || args.node1_public_key;
+      const node2Pk = existing.node2_public_key || args.node2_public_key;
+
+      // Look for updates to the peers' metadata, update chan row as necessary
+      return asyncMap([node1Pk, node2Pk].filter(n => !!n), (key, cbk) => {
+        return getDdbItem({db, table, where: {key}}, cbk);
+      },
+      (err, got) => {
+        if (!!err) {
+          return cbk(err);
+        }
+
+        let node1Updated;
+        let node2Updated;
+        const nodes = got.map(({item}) => item).filter(item => !!item);
+        const updates = {};
+
+        const node1 = nodes.find(n => !!node1Pk && n.key === node1Pk);
+        const node2 = nodes.find(n => !!node2Pk && n.key === node2Pk);
+
+        if (!!node1 && existing.node1_alias !== node1.alias) {
+          node1Updated = true;
+          updates.node1_alias = node1.alias;
+        }
+
+        if (!!node1 && existing.node1_color !== node1.color) {
+          node1Updated = true;
+          updates.node1_color = node1.color;
+        }
+
+        if (!!node2 && existing.node2_alias !== node2.alias) {
+          node2Updated = true;
+          updates.node2_alias = node2.alias;
+        }
+
+        if (!!node2 && existing.node2_color !== node2.color) {
+          node2Updated = true;
+          updates.node2_color = node2.color;
+        }
+
+        const metadata = [node1Updated, node2Updated].map((updated, index) => {
+          return {index, updated};
+        });
+
+        return asyncEach(metadata, ({index, updated}, cbk) => {
+          if (!updated) {
+            return cbk();
+          }
+
+          const n = index + [updated].length;
+          const node = ([node1, node2])[index];
+
+          if (!node || !node.key) {
+            return cbk(500, 'ExpectedNodeAtIndexWhenUpdatingMetadata');
+          }
+
+          return updateChannelMetadata({
+            index,
+            alias: updates[`node${n}_alias`] || undefined,
+            aws_access_key_id: args.aws_access_key_id,
+            aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
+            aws_secret_access_key: args.aws_secret_access_key,
+            color: updates[`node${n}_color`] || undefined,
+            id: args.channel_id,
+            network: args.network,
+            public_key: node.key,
+          },
+          cbk);
+        },
+        cbk);
+      });
     }],
 
     // Updated channel

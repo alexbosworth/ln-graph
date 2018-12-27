@@ -1,5 +1,5 @@
 const {activityDb} = require('./constants');
-const chainIds = require('./conf/networks').chain_ids;
+const {chainId} = require('./../chains');
 const {dateForDecrementingNumber} = require('./../dates');
 const {decrementingNumberForDate} = require('./../dates');
 const {lmdb} = require('./../lmdb');
@@ -37,7 +37,7 @@ module.exports = args => {
     throw new Error('ExpectedLmdbPathForEdgeHistoryQuery');
   }
 
-  if (!args.network || !chainIds[args.network]) {
+  if (!args.network) {
     throw new Error('ExpectedNetworkForEdgeHistory');
   }
 
@@ -45,8 +45,14 @@ module.exports = args => {
     throw new Error('ExpectedPublicKeyForEdgeHistory');
   }
 
-  const chain = chainIds[args.network];
+  let chain;
   let start = null;
+
+  try {
+    chain = chainId({network: args.network}).chain_id;
+  } catch (err) {
+    throw new Error('ExpectedValidNetworkToGetEdgeRecords');
+  }
 
   const edge = `${args.to_public_key}${chain}${args.channel_id}`;
 

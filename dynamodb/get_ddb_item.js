@@ -57,6 +57,10 @@ module.exports = (args, cbk) => {
       return cbk([503, 'UnexpectedErrorWhenGettingItem', err]);
     }
 
+    if (!res) {
+      return cbk([503, 'ExpectedResultsFromDdb']);
+    }
+
     if (!Object.keys(res).length) {
       return cbk(null, {});
     }
@@ -66,7 +70,9 @@ module.exports = (args, cbk) => {
     }
 
     try {
-      return cbk(null, {item: objFromDdbRow(res.Item)});
+      const item = objFromDdbRow(res.Item);
+
+      return cbk(null, {item});
     } catch (err) {
       return cbk([503, 'UnexpectedRowFormatForGetItemRequest', err]);
     }

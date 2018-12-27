@@ -1,3 +1,5 @@
+const {uniq} = require('lodash');
+
 const isNumeric = require('./is_numeric');
 
 /** Convert a value to DynamoDb schema
@@ -6,10 +8,20 @@ const isNumeric = require('./is_numeric');
   <Value Object>
 
   @throws
-  Error when value is not compatible
+  <Error> // When value is not compatible
 
   @returns
-  <DynamoDB Object>
+  {
+    [B]: <Value Base64 String>
+    [BOOL]: <Value Bool>
+    [BS]: [<Base64 Value String>]
+    [S]: <Value String>
+    [M]: <Dynamodb Values Object>
+    [N]: <Number String>
+    [NS]: [<Number Value String>]
+    [NULL]: <True Value Bool>
+    [SS]: [<Value String>]
+  }
 */
 module.exports = value => {
   if (typeof value === 'boolean') {
@@ -51,7 +63,7 @@ module.exports = value => {
   }
 
   if (typeof firstArrValue === 'string') {
-    return {SS: value};
+    return {SS: uniq(value)};
   }
 
   if (isNumeric(firstArrValue)) {

@@ -14,14 +14,14 @@ const tests = [
       nodes: ['A', 'B'],
       updates: [
         {
-          // 12h in, A marks B as disabled
-          node1_is_disabled: true,
-          node1_updated_at: new Date(now - 12*hour).toISOString(),
-        },
-        {
           // 18h in, B marks A as disabled
           node2_is_disabled: true,
           node2_updated_at: new Date(now - 6*hour).toISOString(),
+        },
+        {
+          // 12h in, A marks B as disabled
+          node1_is_disabled: true,
+          node1_updated_at: new Date(now - 12*hour).toISOString(),
         },
       ],
     },
@@ -36,18 +36,45 @@ const tests = [
       nodes: ['A', 'B'],
       updates: [
         {
+          // 18h in, A marks B as disabled
+          node1_is_disabled: true,
+          node1_updated_at: new Date(now - 6*hour).toISOString(),
+        },
+        {
           // 12h in, B marks A as disabled
           node2_is_disabled: true,
           node2_updated_at: new Date(now - 12*hour).toISOString(),
         },
+      ],
+    },
+    description: 'B marks A as down',
+    expected: {changes: [1, 1], uptime: [12*hour, 18*hour]},
+  },
+  {
+    args: {
+      after: new Date(now - 24*hour).toISOString(),
+      before: new Date(now).toISOString(),
+      initially: [{is_online: true}, {is_online: true}],
+      nodes: ['A', 'B'],
+      updates: [
         {
           // 18h in, A marks B as disabled
           node1_is_disabled: true,
           node1_updated_at: new Date(now - 6*hour).toISOString(),
         },
+        {
+          // 13h in, B marks A as disabled again
+          node2_is_disabled: true,
+          node2_updated_at: new Date(now - 11*hour).toISOString(),
+        },
+        {
+          // 12h in, B marks A as disabled
+          node2_is_disabled: true,
+          node2_updated_at: new Date(now - 12*hour).toISOString(),
+        },
       ],
     },
-    description: 'B marks A as down',
+    description: 'B marks A as down, repeatedly',
     expected: {changes: [1, 1], uptime: [12*hour, 18*hour]},
   },
   {

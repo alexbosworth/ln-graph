@@ -6,10 +6,17 @@ const objFromDdbRow = require('./obj_from_ddb_row');
 
   {
     db: <DynamoDb Object>
+    [index]: <Index Name String>
     [is_descending]: <Query Results Are Descending Bool>
     [limit]: <Limit Results Number>
     table: <Table Name String>
-    where: <Where Object>
+    where: {
+      $attribute_name: {
+        [eq]: <Equals String>
+        [gt]: <Greater Than String>
+        [starts_with]: <Starts With String>
+      }
+    }
   }
 
   @returns via cbk
@@ -53,6 +60,10 @@ module.exports = (args, cbk) => {
           matches.push(`#${attr} > :${attr}`);
           break;
 
+        case 'starts_with':
+          matches.push(`begins_with(#${attr}, :${attr})`);
+          break;
+
         default:
           throw new Error('UnexpectedComparisonInQuery');
         }
@@ -65,6 +76,7 @@ module.exports = (args, cbk) => {
   const params = {
     ExpressionAttributeNames: attributeNames,
     ExpressionAttributeValues: attributeValues,
+    IndexName: args.index || undefined,
     KeyConditionExpression: matches.join(' and '),
     Limit: args.limit || undefined,
     ScanIndexForward: !args.is_descending,

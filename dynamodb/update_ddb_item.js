@@ -48,38 +48,42 @@ module.exports = ({changes, db, expect, table, where}, cbk) => {
   const removes = [];
   const vals = {};
 
-  Object.keys(changes).forEach(attr => {
-    names[`#${attr}`] = attr;
+  try {
+    Object.keys(changes).forEach(attr => {
+      names[`#${attr}`] = attr;
 
-    if (!!changes[attr].add) {
-      vals[`:${attr}`] = ddbRowFormattedValue(changes[attr].add);
-      operations.push(`#${attr} = #${attr} + :${attr}`);
-    }
+      if (!!changes[attr].add) {
+        vals[`:${attr}`] = ddbRowFormattedValue(changes[attr].add);
+        operations.push(`#${attr} = #${attr} + :${attr}`);
+      }
 
-    if (changes[attr].remove) {
-      removes.push(`#${attr}`);
-    }
+      if (!!changes[attr].remove) {
+        removes.push(`#${attr}`);
+      }
 
-    if (changes[attr].set !== undefined) {
-      vals[`:${attr}`] = ddbRowFormattedValue(changes[attr].set);
-      operations.push(`#${attr} = :${attr}`);
-    }
+      if (changes[attr].set !== undefined) {
+        vals[`:${attr}`] = ddbRowFormattedValue(changes[attr].set);
+        operations.push(`#${attr} = :${attr}`);
+      }
 
-    return;
-  });
+      return;
+    });
 
-  Object.keys(expect || {}).forEach(attr => {
-    names[`#${attr}`] = attr;
-    vals[`:equals_${attr}`] = ddbRowFormattedValue(expect[attr]);
+    Object.keys(expect || {}).forEach(attr => {
+      names[`#${attr}`] = attr;
+      vals[`:equals_${attr}`] = ddbRowFormattedValue(expect[attr]);
 
-    return expected.push(`#${attr} = :equals_${attr}`);
-  });
+      return expected.push(`#${attr} = :equals_${attr}`);
+    });
+  } catch (err) {
+    throw new Error('FailedToConvertValuesToDdbFormat');
+  }
 
   const removeCommands = !!removes.length ? `REMOVE ${removes.join(',')}` : '';
   const setCommands = !!operations.length ? `SET ${operations.join(',')}` : '';
 
   return db.updateItem({
-    ConditionExpression: expected.join(' and '),
+    ConditionExpression: !expected.length ? undefined : expected.join(' and '),
     ExpressionAttributeNames: names,
     ExpressionAttributeValues: vals,
     Key: key,
@@ -101,7 +105,7 @@ module.exports = ({changes, db, expect, table, where}, cbk) => {
     }
 
     if (!!err) {
-      return cbk([503, 'UnexpectedDynamoDbUpdateItemError', err]);
+      return cbk([503, 'UnexpectedDynamoDbUpdateItemError', err, changes]);
     }
 
     if (!res) {

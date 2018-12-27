@@ -47,7 +47,20 @@ module.exports = (args, cbk) => {
         sockets: args.sockets,
         updated_at: args.updated_at,
       },
-      cbk);
+      (err, res) => {
+        // Avoid reporting conflict errors
+        if (Array.isArray(err)) {
+          const [code] = err;
+
+          return code === 409 ? cbk(null, {}) : cbk(err);
+        }
+
+        if (!!err) {
+          return cbk(err);
+        }
+
+        return cbk(err, res);
+      });
     },
     cbk
   );

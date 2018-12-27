@@ -64,7 +64,11 @@ module.exports = ({after, before, initially, nodes, updates}) => {
     uptime: 0,
   }));
 
+  let lastNode1State = state[1].is_online;
+  let lastNode2State = state[0].is_online;
+
   updates
+    .slice()
     .reverse()
     .filter(update => {
       const updatedAt = [update.node1_updated_at, update.node2_updated_at];
@@ -76,40 +80,48 @@ module.exports = ({after, before, initially, nodes, updates}) => {
 
       // Node 1 marks Node 2 as coming online
       if (update.node1_is_disabled === false && !!update.node1_updated_at) {
-        node2State.is_online = true;
-        node2State.presence_changed_at = update.node1_updated_at;
-        node2State.presence_changed_count++;
+        if (!node2State.is_online) {
+          node2State.is_online = true;
+          node2State.presence_changed_at = update.node1_updated_at;
+          node2State.presence_changed_count++;
+        }
       }
 
       // Node 1 marks Node 2 as going offline
       if (update.node1_is_disabled && node2State.presence_changed_at) {
-        const node1Update = parse(update.node1_updated_at);
-        const node2Updated = parse(node2State.presence_changed_at);
+        if (!!node2State.is_online) {
+          const node1Update = parse(update.node1_updated_at);
+          const node2Updated = parse(node2State.presence_changed_at);
 
-        node2State.uptime += node1Update - node2Updated;
+          node2State.uptime += node1Update - node2Updated;
 
-        node2State.is_online = false;
-        node2State.presence_changed_at = update.node1_updated_at;
-        node2State.presence_changed_count++;
+          node2State.is_online = false;
+          node2State.presence_changed_at = update.node1_updated_at;
+          node2State.presence_changed_count++;
+        }
       }
 
       // Node 2 marks Node 1 as coming online
       if (update.node2_is_disabled === false && !!update.node2_updated_at) {
-        node1State.is_online = true;
-        node1State.presence_changed_at = update.node2_updated_at;
-        node1State.presence_changed_count++;
+        if (!node1State.is_online) {
+          node1State.is_online = true;
+          node1State.presence_changed_at = update.node2_updated_at;
+          node1State.presence_changed_count++;
+        }
       }
 
       // Node 2 marks Node 1 as going offline
-      if (update.node2_is_disabled && !!update.node2_updated_at) {
-        const node1Updated = parse(node1State.presence_changed_at);
-        const node2Update = parse(update.node2_updated_at);
+      if (!!update.node2_is_disabled && !!update.node2_updated_at) {
+        if (!!node1State.is_online) {
+          const node1Updated = parse(node1State.presence_changed_at);
+          const node2Update = parse(update.node2_updated_at);
 
-        node1State.uptime += node2Update - node1Updated;
+          node1State.uptime += node2Update - node1Updated;
 
-        node1State.is_online = false;
-        node1State.presence_changed_at = update.node2_updated_at;
-        node1State.presence_changed_count++;
+          node1State.is_online = false;
+          node1State.presence_changed_at = update.node2_updated_at;
+          node1State.presence_changed_count++;
+        }
       }
     });
 

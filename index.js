@@ -1,12 +1,15 @@
 const {calculateStability} = require('./statistics');
 const {closeChannel} = require('./records');
 const {getAllNodes} = require('./records');
+const {getChanRecordsForNode} = require('./records');
 const {getChannel} = require('./channels');
 const {getChannelHistory} = require('./records');
 const {getChannelRecord} = require('./records');
 const {getChannelUpdates} = require('./records');
-const {getChannelsForNode} = require('./records');
-const {getEdgeHistory} = require('./records');
+const {getChannelsForNode} = require('./channels');
+const {getEdgeHistory} = require('./edges');
+const {getEdgeRecords} = require('./records');
+const {getNode} = require('./nodes');
 const {getNodeMetrics} = require('./statistics');
 const {getNodeRecord} = require('./records');
 const {recordEdgeActivity} = require('./records');
@@ -20,12 +23,15 @@ module.exports = {
   calculateStability,
   closeChannel,
   getAllNodes,
+  getChanRecordsForNode,
   getChannel,
   getChannelHistory,
   getChannelRecord,
   getChannelUpdates,
   getChannelsForNode,
   getEdgeHistory,
+  getEdgeRecords,
+  getNode,
   getNodeMetrics,
   getNodeRecord,
   recordEdgeActivity,

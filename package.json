@@ -2,9 +2,10 @@
   "author": "Alex Bosworth",
   "dependencies": {
     "async": "2.6.1",
-    "aws-sdk": "2.375.0",
+    "aws-sdk": "2.382.0",
+    "bolt07": "1.4.0",
     "bn.js": "4.11.8",
-    "ln-service": "30.0.0",
+    "ln-service": "30.2.1",
     "node-lmdb": "0.6.0",
     "vali-date": "1.0.0"
   },
@@ -12,7 +13,7 @@
   "devDependencies": {
     "rimraf": "2.6.2",
     "tap": "12.1.1",
-    "uuid": "3.3.0"
+    "uuid": "3.3.2"
   },
   "license": "MIT",
   "main": "index.js",
@@ -24,5 +25,5 @@
   "scripts": {
     "test": "tap test/dates/*.js test/lmdb/*.js test/statistics/*.js"
   },
-  "version": "1.1.0"
+  "version": "1.2.0"
 }

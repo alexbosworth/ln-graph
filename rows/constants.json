@@ -1,4 +1,8 @@
 {
-  "chansDb": "channels"
+  "chainIdByteCount": 2,
+  "chansDb": "channels",
+  "edgeActivityDb": "edge-activity",
+  "nodeNumbers": ["1", "2"],
+  "nodesDb": "nodes"
 }
 

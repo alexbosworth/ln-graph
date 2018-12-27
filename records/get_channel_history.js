@@ -1,14 +1,14 @@
 const {chanIdHexLen} = require('./constants');
 const {ddb} = require('./../dynamodb');
+const {defaultHistoryLimit} = require('./constants');
 const networks = require('./conf/networks');
 const {queryDdb} = require('./../dynamodb');
 const {updatesDb} = require('./constants');
 
-const defaultHistoryLimit = 6;
-
 /** Get the history of a channel
 
   {
+    [after]: <After ISO 8601 Date String>
     [aws_access_key_id]: <AWS Access Key Id String>
     [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
     [aws_secret_access_key]: <AWS Secret Access Key String>
@@ -74,6 +74,10 @@ module.exports = (args, cbk) => {
 
   let db;
   const where = {key: {eq: `${chain}${args.id}`}};
+
+  if (!!args.after) {
+    where.updated_at = {gt: args.after};
+  }
 
   try {
     db = ddb({

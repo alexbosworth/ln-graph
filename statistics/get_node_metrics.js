@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
 
-const {getChannelsForNode} = require('./../records');
-const {getEdgeHistory} = require('./../records');
+const {getChanRecordsForNode} = require('./../records');
+const {getEdgeRecords} = require('./../records');
 const {returnResult} = require('./../async');
 
-/** Get metrics regarding a node
+/** Get liquidity metrics for a node
 
   {
     after: <After Date String>
@@ -49,7 +49,7 @@ module.exports = (args, cbk) => {
     // Get the channels of a node
     getChannels: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, getChannelsForNode({
+        return cbk(null, getChanRecordsForNode({
           lmdb_path: args.lmdb_path,
           network: args.network,
           public_key: args.public_key,
@@ -65,14 +65,18 @@ module.exports = (args, cbk) => {
       const peers = {};
       const pk = args.public_key;
 
-      const largeChannels = channels.filter(n => n.capacity > args.min_tokens);
+      const largeChannels = channels
+        .filter(n => !n.close_height)
+        .filter(n => n.capacity > args.min_tokens);
 
+      // Iterate through the node's channels to find traversal successes
       try {
         const histories = largeChannels.forEach(({id, policies}) => {
           return policies.filter(p => !!p.public_key).forEach(p => {
             const policy = policies.find(n => n.public_key === p.public_key);
 
-            const {attempts} = getEdgeHistory({
+            // Get the history of edge traversal attempts
+            const {attempts} = getEdgeRecords({
               after: args.after,
               channel_id: id,
               limit: [policy.public_key].length,
@@ -83,6 +87,7 @@ module.exports = (args, cbk) => {
 
             const [lastAttempt] = attempts;
 
+            // Exit early when there has been no recorded attempt
             if (!lastAttempt) {
               return null;
             }
@@ -93,6 +98,7 @@ module.exports = (args, cbk) => {
 
             switch (lastAttempt.type) {
             case 'success':
+              // Mark successful peer relationships as successful
               if (policy.public_key === peerKey) {
                 peers[peerKey].outbound = true;
               } else {
@@ -101,6 +107,7 @@ module.exports = (args, cbk) => {
               break;
 
             case 'temporary_channel_failure':
+              // Mark unsuccessful peer relationships as unsuccessful
               if (policy.public_key === peerKey && !peers[peerKey].outbound) {
                 peers[peerKey].outbound = false;
               }
