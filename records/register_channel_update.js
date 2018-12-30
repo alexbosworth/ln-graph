@@ -317,7 +317,7 @@ module.exports = (args, cbk) => {
         return cbk();
       }
 
-      if (!getUpdateFromDdb || !getUpdateFromDdb.item) {
+      if (!getUpdateFromDdb || !!getUpdateFromDdb.item) {
         return cbk();
       }
 
