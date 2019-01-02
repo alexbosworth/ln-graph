@@ -21,6 +21,9 @@ const {getDdbItem} = require('./../dynamodb');
       [close_height]: <Close Height Number>
       policies: [{
         [alias]: <Cached Alias String>
+        [attempted]: <Attempted Result String>
+        [attempted_at]: <Attempted ISO 8601 Date String>
+        [attempted_tokens]: <Attempted Tokens Number>
         [base_fee_mtokens]: <Base Fee Millitokens String>
         [cltv_delta]: <Locktime Delta Number>e
         [color]: <Cached Color String>

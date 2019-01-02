@@ -7,7 +7,9 @@ const {take} = require('lodash');
 
 const checkChannelClosed = require('./check_channel_closed');
 const {checkLimit} = require('./constants');
+const {getChanRecordsForNode} = require('./../records');
 const getChannel = require('./get_channel');
+const {getChannelRecords} = require('./../records');
 const {getChannelRows} = require('./../rows');
 const {returnResult} = require('./../async');
 const {updateWindowMs} = require('./constants');
@@ -34,6 +36,9 @@ const {now} = Date;
       id: <Channel Raw Id Hex String>
       policies: [{
         [alias]: <Alias String>
+        [attempted]: <Attempted Result String>
+        [attempted_at]: <Attempted ISO 8601 Date String>
+        [attempted_tokens]: <Attempted Tokens Number>
         base_fee_mtokens: <Base Fee Millitokens String>
         cltv_delta: <CLTV Delta Number>
         [color]: <Color String>
@@ -52,7 +57,7 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
-      if (!args.aws_access_key_id && !args.lmdb_path && !args.lnd) {
+      if (!args.aws_access_key_id && !args.lmdb_path) {
         return cbk([400, 'ExpectedAwsAccessKeyOrLmdbPath']);
       }
 
@@ -67,8 +72,29 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
+    // Get channels for node from lmdb
+    getRecords: ['validate', ({}, cbk) => {
+      if (!!args.aws_access_key_id) {
+        return cbk();
+      }
+
+      try {
+        return cbk(null, getChanRecordsForNode({
+          lmdb_path: args.lmdb_path,
+          network: args.network,
+          public_key: args.public_key,
+        }));
+      } catch (err) {
+        return cbk([500, 'FailedToGetChannelRecordsForNode', err]);
+      }
+    }],
+
     // Get channels for node from dynamodb
     getRows: ['validate', ({}, cbk) => {
+      if (!args.aws_access_key_id) {
+        return cbk();
+      }
+
       return getChannelRows({
         aws_access_key_id: args.aws_access_key_id,
         aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
@@ -79,13 +105,18 @@ module.exports = (args, cbk) => {
       cbk);
     }],
 
+    // Channels for node
+    chansForNode: ['getRecords', 'getRows', ({getRecords, getRows}, cbk) => {
+      return cbk(null, getRecords || getRows);
+    }],
+
     // Check channels to see if they are closed
-    checkClosed: ['getRows', ({getRows}, cbk) => {
+    checkClosed: ['chansForNode', ({chansForNode}, cbk) => {
       if (!args.lnd) {
         return cbk();
       }
 
-      const channelsToCheck = take(shuffle(getRows.channels), checkLimit);
+      const channelsToCheck = take(shuffle(chansForNode.channels), checkLimit);
       const old = new Date(now() - updateWindowMs).toISOString();
 
       if (!channelsToCheck.length) {
@@ -112,8 +143,8 @@ module.exports = (args, cbk) => {
     }],
 
     // Final channels
-    channels: ['getRows', ({getRows}, cbk) => {
-      return asyncMapSeries(getRows.channels, (channel, cbk) => {
+    channels: ['chansForNode', ({chansForNode}, cbk) => {
+      return asyncMapSeries(chansForNode.channels, (channel, cbk) => {
         if (!!channel.close_height) {
           return cbk();
         }
@@ -124,11 +155,19 @@ module.exports = (args, cbk) => {
           return cbk(null, channel);
         }
 
+        let channelId;
+
+        try {
+          channelId = chanFormat({id: channel.id}).channel;
+        } catch (err) {
+          return cbk([500, 'InvalidChannelIdInChannelRowsForNode']);
+        }
+
         return getChannel({
           aws_access_key_id: args.aws_access_key_id,
           aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
           aws_secret_access_key: args.aws_secret_access_key,
-          channel: chanFormat({id: channel.id}).channel,
+          channel: channelId,
           lmdb_path: args.lmdb_path,
           lnd: args.lnd,
           network: args.network,
