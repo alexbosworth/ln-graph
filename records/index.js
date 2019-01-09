@@ -11,7 +11,7 @@ const setChannelRecord = require('./set_channel_record');
 const updateChannel = require('./update_channel');
 const updateNode = require('./update_node');
 
-/** Graph persistent records
+/** Records are items in lmdb
 */
 module.exports = {
   closeChannel,

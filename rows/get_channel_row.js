@@ -1,3 +1,5 @@
+const {rawChanId} = require('bolt07');
+
 const {chainId} = require('./../chains');
 const channelFromRow = require('./channel_from_row');
 const {chansDb} = require('./constants');
@@ -10,7 +12,7 @@ const {getDdbItem} = require('./../dynamodb');
     aws_access_key_id: <AWS Access Key Id String>
     aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_secret_access_key: <AWS Secret Access Key String>
-    id: <Raw Channel Id Hex String>
+    id: <Standard Format Channel Hex String>
     network: <Network Name String>
   }
 
@@ -61,7 +63,7 @@ module.exports = (args, cbk) => {
 
   let chain;
   let db;
-  const {id} = args;
+  let id;
   const table = `${args.aws_dynamodb_table_prefix}-${chansDb}`;
 
   try {
@@ -79,6 +81,12 @@ module.exports = (args, cbk) => {
     return cbk([500, 'FailedToGetDdbConnectionForChannelRowFetch', err]);
   }
 
+  try {
+    id = rawChanId({channel: args.id}).id;
+  } catch (err) {
+    return cbk([400, 'ExpectedStandardFormatChannelIdToGetChannelRow', err]);
+  }
+
   return getDdbItem({db, table, where: {key: `${chain}${id}`}}, (err, res) => {
     if (!!err) {
       return cbk(err);
@@ -90,36 +98,40 @@ module.exports = (args, cbk) => {
       return cbk(null, {});
     }
 
-    return cbk(null, channelFromRow({
-      capacity: item.capacity,
-      close_height: item.close_height,
-      key: `${chain}${id}`,
-      node1_alias: item.node1_alias,
-      node1_attempted: item.node1_attempted,
-      node1_attempted_at: item.node1_attempted_at,
-      node1_attempted_tokens: item.node1_attempted_tokens,
-      node1_base_fee_mtokens: item.node1_base_fee_mtokens,
-      node1_cltv_delta: item.node1_cltv_delta,
-      node1_color: item.node1_color,
-      node1_fee_rate: item.node1_fee_rate,
-      node1_is_disabled: item.node1_is_disabled,
-      node1_min_htlc_mtokens: item.node1_min_htlc_mtokens,
-      node1_public_key: item.node1_public_key,
-      node2_alias: item.node2_alias,
-      node2_attempted: item.node2_attempted,
-      node2_attempted_at: item.node2_attempted_at,
-      node2_attempted_tokens: item.node2_attempted_tokens,
-      node2_base_fee_mtokens: item.node2_base_fee_mtokens,
-      node2_cltv_delta: item.node2_cltv_delta,
-      node2_color: item.node2_color,
-      node2_fee_rate: item.node2_fee_rate,
-      node2_is_disabled: item.node2_is_disabled,
-      node2_min_htlc_mtokens: item.node2_min_htlc_mtokens,
-      node2_public_key: item.node2_public_key,
-      transaction_id: item.transaction_id,
-      transaction_vout: item.transaction_vout,
-      updated_at: item.updated_at,
-    }));
+    try {
+      return cbk(null, channelFromRow({
+        capacity: item.capacity,
+        close_height: item.close_height,
+        key: `${chain}${id}`,
+        node1_alias: item.node1_alias,
+        node1_attempted: item.node1_attempted,
+        node1_attempted_at: item.node1_attempted_at,
+        node1_attempted_tokens: item.node1_attempted_tokens,
+        node1_base_fee_mtokens: item.node1_base_fee_mtokens,
+        node1_cltv_delta: item.node1_cltv_delta,
+        node1_color: item.node1_color,
+        node1_fee_rate: item.node1_fee_rate,
+        node1_is_disabled: item.node1_is_disabled,
+        node1_min_htlc_mtokens: item.node1_min_htlc_mtokens,
+        node1_public_key: item.node1_public_key,
+        node2_alias: item.node2_alias,
+        node2_attempted: item.node2_attempted,
+        node2_attempted_at: item.node2_attempted_at,
+        node2_attempted_tokens: item.node2_attempted_tokens,
+        node2_base_fee_mtokens: item.node2_base_fee_mtokens,
+        node2_cltv_delta: item.node2_cltv_delta,
+        node2_color: item.node2_color,
+        node2_fee_rate: item.node2_fee_rate,
+        node2_is_disabled: item.node2_is_disabled,
+        node2_min_htlc_mtokens: item.node2_min_htlc_mtokens,
+        node2_public_key: item.node2_public_key,
+        transaction_id: item.transaction_id,
+        transaction_vout: item.transaction_vout,
+        updated_at: item.updated_at,
+      }));
+    } catch (err) {
+      return cbk([503, 'FailedToConvertRowIntoChannel', err]);
+    }
   });
 };
 

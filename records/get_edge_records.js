@@ -1,3 +1,5 @@
+const {rawChanId} = require('bolt07');
+
 const {activityDb} = require('./constants');
 const {chainId} = require('./../chains');
 const {dateForDecrementingNumber} = require('./../dates');
@@ -9,7 +11,7 @@ const {queryLmdb} = require('./../lmdb');
 
   {
     [after]: <After ISO 8601 Date String>
-    channel_id: <Channel Id Hex String>
+    channel: <Standard Format Channel Id String>
     [limit]: <Limit Number>
     lmdb_path: <LMDB Path String>
     network: <Network Name String>
@@ -29,7 +31,7 @@ const {queryLmdb} = require('./../lmdb');
   }
 */
 module.exports = args => {
-  if (!args.channel_id) {
+  if (!args.channel) {
     throw new Error('ExpectedChannelIdForEdgeHistoryQuery');
   }
 
@@ -46,7 +48,14 @@ module.exports = args => {
   }
 
   let chain;
-  let start = null;
+  let id;
+  let start;
+
+  try {
+    id = rawChanId({channel: args.channel}).id;
+  } catch (err) {
+    throw new Error('ExpectedValidChannelIdToGetEdgeRecords');
+  }
 
   try {
     chain = chainId({network: args.network}).chain_id;
@@ -54,7 +63,7 @@ module.exports = args => {
     throw new Error('ExpectedValidNetworkToGetEdgeRecords');
   }
 
-  const edge = `${args.to_public_key}${chain}${args.channel_id}`;
+  const edge = `${args.to_public_key}${chain}${id}`;
 
   try {
     start = !args.after ? '' : decrementingNumberForDate({date: args.after});

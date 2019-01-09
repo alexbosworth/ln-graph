@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const {rawChanId} = require('bolt07');
 
 const {ddb} = require('./../dynamodb');
 const {chainId} = require('./../chains');
@@ -14,7 +15,7 @@ const {updateDdbItem} = require('./../dynamodb');
     aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_secret_access_key: <AWS Secret Access Key String>
     [color]: <Color String>
-    id: <Channel Id Hex String>
+    id: <Standard Format Channel Id String>
     index: <Edge Index Number>
     network: <Network Name String>
     public_key: <Public Key Hex String>
@@ -76,11 +77,20 @@ module.exports = (args, cbk) => {
       }
     }],
 
+    // The db uses the raw channel id
+    id: ['validate', ({}, cbk) => {
+      try {
+        return cbk(null, rawChanId({channel: args.id}).id);
+      } catch (err) {
+        return cbk([400, 'ExpectedChannelToUpdateChannelMetadata', err]);
+      }
+    }],
+
     // Update the channel metadata
-    update: ['chain', 'db', ({chain, db}, cbk) => {
+    update: ['chain', 'db', 'id', ({chain, db, id}, cbk) => {
       const changes = {};
-      const key = `${chain}${args.id}`;
-      const n = args.index + [args.id].length;
+      const key = `${chain}${id}`;
+      const n = args.index + [id].length;
       const table = `${args.aws_dynamodb_table_prefix}-${chansDb}`;
 
       if (!!args.alias) {

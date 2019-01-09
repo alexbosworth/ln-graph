@@ -1,3 +1,5 @@
+const {rawChanId} = require('bolt07');
+
 const {chanIdHexLen} = require('./constants');
 const {ddb} = require('./../dynamodb');
 const {defaultHistoryLimit} = require('./constants');
@@ -12,7 +14,7 @@ const {updatesDb} = require('./constants');
     [aws_access_key_id]: <AWS Access Key Id String>
     [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
     [aws_secret_access_key]: <AWS Secret Access Key String>
-    id: <Channel Id Hex String>
+    id: <Standard Format Channel Id String>
     [limit]: <Limit of Historical Entries Number>
     network: <Network Name String>
   }
@@ -20,7 +22,7 @@ const {updatesDb} = require('./constants');
   @returns via cbk
   {
     updates: [{
-      channel_id: <Channel Id Hex String>
+      channel: <Standard Format Channel Id String>
       [node1_cltv_delta]: <CLTV Delta Number>
       [node1_min_htlc_mtokens]: <Minimum HTLC Millitokens String>
       [node1_base_fee_mtokens]: <Base Fee Millitokens String>
@@ -49,12 +51,20 @@ module.exports = (args, cbk) => {
     return cbk([400, 'ExpectedAwsSecretAccessKeyForChannelHistoryLookup']);
   }
 
-  if (!args.id || args.id.length !== chanIdHexLen) {
+  if (!args.id) {
     return cbk([400, 'ExpectedChannelIdForChannelHistoryLookup']);
   }
 
   if (!args.network) {
     return cbk([400, 'ExpectedNetworkForChannelHistoryLookup']);
+  }
+
+  let id;
+
+  try {
+    id = rawChanId({channel: args.id}).id;
+  } catch (err) {
+    return cbk([400, 'ExpectedStandardFormatChannelIdString', err]);
   }
 
   let chain;
@@ -73,7 +83,7 @@ module.exports = (args, cbk) => {
   }
 
   let db;
-  const where = {key: {eq: `${chain}${args.id}`}};
+  const where = {key: {eq: `${chain}${id}`}};
 
   if (!!args.after) {
     where.updated_at = {gt: args.after};
@@ -101,7 +111,7 @@ module.exports = (args, cbk) => {
     }
 
     const updates = res.items.map(n => ({
-      channel_id: args.id,
+      channel: args.id,
       close_height: n.close_height,
       node1_base_fee_mtokens: n.node1_base_fee_mtokens,
       node1_cltv_delta: n.node1_cltv_delta,

@@ -1,7 +1,7 @@
 const asyncAuto = require('async/auto');
+const {rawChanId} = require('bolt07');
 
 const chainIds = require('./conf/networks').chain_ids;
-const {chanIdHexLen} = require('./constants');
 const {chansDb} = require('./constants');
 const {ddb} = require('./../dynamodb');
 const {getDdbItem} = require('./../dynamodb');
@@ -18,7 +18,7 @@ const {updateLmdbItem} = require('./../lmdb');
     [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
     [aws_secret_access_key]: <AWS Secret Access Key String>
     close_height: <Close Height Number>
-    id: <Channel Id Hex String>
+    id: <Standard Format Channel Id String>
     [lmdb_path]: <LMDB Path String>
     network: <Network Name String>
   }
@@ -31,7 +31,7 @@ module.exports = (args, cbk) => {
         return cbk([400, 'ExpectedCloseHeightToMarkChannelClosed']);
       }
 
-      if (!args.id || args.id.length !== chanIdHexLen) {
+      if (!args.id) {
         return cbk([400, 'ExpectedChannelIdToMarkChannelClosed']);
       }
 
@@ -70,6 +70,15 @@ module.exports = (args, cbk) => {
       }
     }],
 
+    // The database id for a channel is its raw hex form
+    id: ['validate', ({}, cbk) => {
+      try {
+        return cbk(null, rawChanId({channel: args.id}).id);
+      } catch (err) {
+        return cbk([400, 'ExpectedValidStandardFormatChannelId', err]);
+      }
+    }],
+
     // Get the lmdb database context
     lmdb: ['validate', ({}, cbk) => {
       // Exit early when the lmdb database path is not configured
@@ -85,7 +94,7 @@ module.exports = (args, cbk) => {
     }],
 
     // Channel key
-    key: ['chain', ({chain}, cbk) => cbk(null, `${chain}${args.id}`)],
+    key: ['chain', ({chain, id}, cbk) => cbk(null, `${chain}${id}`)],
 
     // Get the current state of the channel from dynamodb
     getChanFromDdb: ['db', 'key', ({db, key}, cbk) => {
@@ -94,12 +103,9 @@ module.exports = (args, cbk) => {
         return cbk();
       }
 
-      return getDdbItem({
-        db,
-        table: `${args.aws_dynamodb_table_prefix}-${chansDb}`,
-        where: {key},
-      },
-      cbk);
+      const table = `${args.aws_dynamodb_table_prefix}-${chansDb}`;
+
+      return getDdbItem({db, table, where: {key}}, cbk);
     }],
 
     // Get the current state of the channel from lmdb

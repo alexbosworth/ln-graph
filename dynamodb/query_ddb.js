@@ -111,7 +111,7 @@ module.exports = (args, cbk) => {
 
       return cbk(null, {items, last_key: lastKey || undefined});
     } catch (err) {
-      return cbk([503, 'FailedToDemarshalDbQueryResultItems']);
+      return cbk([503, 'FailedToDemarshalDbQueryResultItems', err]);
     }
   });
 };

@@ -1,5 +1,7 @@
+const {rawChanId} = require('bolt07');
+
 const {chanIdHexLen} = require('./constants');
-const chainIds = require('./conf/networks').chain_ids;
+const {chainId} = require('./../chains');
 const {chansDb} = require('./constants');
 const {lmdb} = require('./../lmdb');
 const {nodeChannelsDb} = require('./constants');
@@ -11,7 +13,7 @@ const {putLmdbItem} = require('./../lmdb');
   {
     capacity: <Maximum Tokens Number>
     [close_height]: <Channel Close Height Number>
-    id: <Channel Id Hex String>
+    id: <Standard Format Channel Id String>
     lmdb_path: <LMDB Path String>
     network: <Network Name String>
     policies: [{
@@ -34,42 +36,56 @@ module.exports = args => {
     throw new Error('ExpectedLmdbPathToSetChannel');
   }
 
-  if (!args.id || args.id.length !== chanIdHexLen) {
+  if (!args.id) {
     throw new Error('ExpectedChannelIdToSetChannelRecord');
   }
 
-  if (!args.network || !chainIds[args.network]) {
+  if (!args.network) {
     throw new Error('ExpectedNetworkToSetChannel');
   }
 
-  const key = `${chainIds[args.network]}${args.id}`;
-  const [policy1, policy2] = args.policies;
+  let chain;
+  let id;
 
   try {
-    const channel = {
-      capacity: args.capacity,
-      close_height: args.close_height,
-      node1_base_fee_mtokens: policy1.base_fee_mtokens,
-      node1_cltv_delta: policy1.cltv_delta,
-      node1_fee_rate: policy1.fee_rate,
-      node1_is_disabled: policy1.is_disabled,
-      node1_min_htlc_tokens: policy1.min_htlc_mtokens,
-      node1_public_key: policy1.public_key,
-      node1_updated_at: args.updated_at,
-      node2_base_fee_mtokens: policy2.base_fee_mtokens,
-      node2_cltv_delta: policy2.cltv_delta,
-      node2_fee_rate: policy2.fee_rate,
-      node2_is_disabled: policy2.is_disabled,
-      node2_min_htlc_tokens: policy2.min_htlc_mtokens,
-      node2_public_key: policy2.public_key,
-      node2_updated_at: args.updated_at,
-      transaction_id: args.transaction_id,
-      transaction_vout: args.transaction_vout,
-    };
+    chain = chainId({network: args.network}).chain_id;
+  } catch (err) {
+    throw new Error('ExpectedValidChannelNetwork');
+  }
 
+  try {
+    id = rawChanId({channel: args.id}).id;
+  } catch (err) {
+    throw new Error('ExpectedChannelIdToSetChannelRecord');
+  }
+
+  const [policy1, policy2] = args.policies;
+
+  const channel = {
+    capacity: args.capacity,
+    close_height: args.close_height,
+    node1_base_fee_mtokens: policy1.base_fee_mtokens,
+    node1_cltv_delta: policy1.cltv_delta,
+    node1_fee_rate: policy1.fee_rate,
+    node1_is_disabled: policy1.is_disabled,
+    node1_min_htlc_tokens: policy1.min_htlc_mtokens,
+    node1_public_key: policy1.public_key,
+    node1_updated_at: args.updated_at,
+    node2_base_fee_mtokens: policy2.base_fee_mtokens,
+    node2_cltv_delta: policy2.cltv_delta,
+    node2_fee_rate: policy2.fee_rate,
+    node2_is_disabled: policy2.is_disabled,
+    node2_min_htlc_tokens: policy2.min_htlc_mtokens,
+    node2_public_key: policy2.public_key,
+    node2_updated_at: args.updated_at,
+    transaction_id: args.transaction_id,
+    transaction_vout: args.transaction_vout,
+  };
+
+  try {
     putLmdbItem({
-      key,
       db: chansDb,
+      key: `${chain}${id}`,
       lmdb: lmdb({path: args.lmdb_path}),
       value: channel,
     });
@@ -80,7 +96,7 @@ module.exports = args => {
       .filter(n => !!n)
       .map(pubKey => ({
         db: nodeChannelsDb,
-        key: `${pubKey}${key}`,
+        key: `${pubKey}${chain}${id}`,
         lmdb: lmdb({path: args.lmdb_path}),
       }))
       .forEach(({db, key, lmdb}) => putLmdbItem({db, key, lmdb, value: {}}));

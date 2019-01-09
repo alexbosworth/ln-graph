@@ -1,6 +1,7 @@
 const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
 const asyncMap = require('async/map');
+const {rawChanId} = require('bolt07');
 
 const {chainId} = require('./../chains');
 const {chanIdHexLen} = require('./constants');
@@ -30,7 +31,7 @@ const {updatesDb} = require('./constants');
     [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
     [aws_secret_access_key]: <AWS Secret Access Key String>
     capacity: <Capacity Tokens Number>
-    channel_id: <Channel Id Hex String>
+    id: <Standard Format Channel Id String>
     [lmdb_path]: <LMDB Database Path>
     network: <Network Name String>
     [node1_base_fee_mtokens]: <Base Fee Millitokens String>
@@ -98,7 +99,7 @@ module.exports = (args, cbk) => {
         return cbk([400, 'ExpectedCapacityForChannelUpdate']);
       }
 
-      if (!args.channel_id || args.channel_id.length !== chanIdHexLen) {
+      if (!args.id) {
         return cbk([400, 'ExpectedChannelIdForChannelUpdate']);
       }
 
@@ -155,6 +156,15 @@ module.exports = (args, cbk) => {
       }
     }],
 
+    // Raw channel id for the database
+    id: ['validate', ({}, cbk) => {
+      try {
+        return cbk(null, rawChanId({channel: args.id}).id);
+      } catch (err) {
+        return cbk([400, 'ExpectedValidChannelIdToRegisterChanUpdate', err]);
+      }
+    }],
+
     // Get the lmdb database context
     lmdb: ['validate', ({}, cbk) => {
       // Exit early when the lmdb database path is not configured
@@ -183,7 +193,7 @@ module.exports = (args, cbk) => {
     }],
 
     // Channel key
-    key: ['chain', ({chain}, cbk) => cbk(null, `${chain}${args.channel_id}`)],
+    key: ['chain', 'id', ({chain, id}, cbk) => cbk(null, `${chain}${id}`)],
 
     // Get the current state of the channel from dynamodb
     getChanFromDdb: ['db', 'key', ({db, key}, cbk) => {
@@ -277,7 +287,6 @@ module.exports = (args, cbk) => {
           update: attributeUpdates,
         }));
       } catch (err) {
-        console.log("FAILED CHANNEL WITh UPDATES", err);
         return cbk([500, 'FailedToDeriveDdbChannelWithUpdates', err]);
       }
     }],
@@ -669,7 +678,7 @@ module.exports = (args, cbk) => {
             aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
             aws_secret_access_key: args.aws_secret_access_key,
             color: updates[`node${n}_color`] || undefined,
-            id: args.channel_id,
+            id: args.id,
             network: args.network,
             public_key: node.key,
           },

@@ -1,3 +1,5 @@
+const {chanFormat} = require('bolt07');
+
 const {chainIdByteCount} = require('./constants');
 
 /** Channel formatted object from a channel row item
@@ -7,6 +9,9 @@ const {chainIdByteCount} = require('./constants');
     [close_height]: <Close Height Number>
     key: <Channel Key String>
     [node1_alias]: <Alias String>
+    [node1_attempted]: <Attempted Type String>
+    [node1_attempted_at]: <Attempted At ISO 8601 Date String>
+    [node1_attempted_tokens]: <Attempted Tokens Number>
     node1_base_fee_mtokens: <Base Fee Millitokens String>
     node1_cltv_delta: <CLTV Delta Number>
     [node1_color]: <Color String>
@@ -15,6 +20,9 @@ const {chainIdByteCount} = require('./constants');
     node1_min_htlc_mtokens: <Min HTLC Millitokens String>
     node1_public_key: <Public Key Hex String>
     [node2_alias]: <Alias String>
+    [node2_attempted]: <Attempted Type String>
+    [node2_attempted_at]: <Attempted At ISO 8601 Date String>
+    [node2_attempted_tokens]: <Attempted Tokens Number>
     node2_base_fee_mtokens: <Base Fee Millitokens String>
     node2_cltv_delta: <CLTV Delta Number>
     [node2_color]: <Color String>
@@ -27,12 +35,15 @@ const {chainIdByteCount} = require('./constants');
     updated_at: <Channel Updated At ISO 8601 Date String>
   }
 
+  @throws
+  <Error>
+
   @returns
   {
     channel: [{
       capacity: <Capacity Tokens Number>
       [close_height]: <Close Height Number>
-      id: <Channel Raw Id Hex String>
+      id: <Standard Format Channel Id String>
       policies: [{
         [alias]: <Alias String>
         [attempted]: <Attempt Result String>
@@ -53,11 +64,19 @@ const {chainIdByteCount} = require('./constants');
   }
 */
 module.exports = item => {
+  let id;
+
+  try {
+    id = chanFormat({id: item.key.slice(chainIdByteCount)}).channel;
+  } catch (err) {
+    throw new Error('ExpectedRawChannelIdForChannelRow');
+  }
+
   return {
     channel: {
+      id,
       capacity: item.capacity,
       close_height: item.close_height,
-      id: item.key.slice(chainIdByteCount),
       policies: [
         {
           alias: item.node1_alias,

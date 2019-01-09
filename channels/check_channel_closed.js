@@ -1,5 +1,4 @@
 const asyncAuto = require('async/auto');
-const {chanNumber} = require('bolt07');
 const {getChannel} = require('ln-service');
 
 const {closeChannel} = require('./../records');
@@ -13,7 +12,7 @@ const {unknownCloseHeight} = require('./constants');
     [aws_access_key_id]: <AWS Access Key Id String>
     [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
     [aws_secret_access_key]: <AWS Secret Access Key String>
-    id: <Channel Id to Check
+    id: <Standard Channel Id String>
     [lmdb_path]: <LMDB Path String>
     lnd: <LND Object>
     network: <Network Name String>
@@ -42,18 +41,9 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
-    // Chan number
-    channelNumber: ['validate', ({}, cbk) => {
-      try {
-        return cbk(null, chanNumber({id: args.id}).number);
-      } catch (err) {
-        return cbk([400, 'ExpectedValidChannelIdForChannelCloseCheck', err]);
-      }
-    }],
-
     // Get the channel from lnd
-    getChannel: ['channelNumber', ({channelNumber}, cbk) => {
-      return getChannel({id: channelNumber, lnd: args.lnd}, (err, res) => {
+    getChannel: ['validate', ({}, cbk) => {
+      return getChannel({id: args.id, lnd: args.lnd}, (err, res) => {
         // An error is expected for close channel actions
         if (!err) {
           return cbk(null, {updated_at: new Date().toISOString()});

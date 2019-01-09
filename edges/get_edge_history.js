@@ -1,5 +1,4 @@
 const asyncAuto = require('async/auto');
-const {rawChanId} = require('bolt07');
 
 const {getEdgeRecords} = require('./../records');
 const {getEdgeRows} = require('./../rows');
@@ -12,7 +11,7 @@ const {returnResult} = require('./../async');
     [aws_access_key_id]: <AWS Access Key Id String>
     [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
     [aws_secret_access_key]: <AWS Secret Access Key String>
-    channel: <Channel Id String>
+    channel: <Standard Format Channel Id String>
     [limit]: <Limit Number>
     [lmdb_path]: <LMDB Path String>
     network: <Network Name String>
@@ -51,17 +50,8 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
-    // Raw channel id
-    channelId: ['validate', ({}, cbk) => {
-      try {
-        return cbk(null, rawChanId({channel: args.channel}).id);
-      } catch (err) {
-        return cbk([400, 'ExpectedValidChannelIdForEdgeHistoryLookup']);
-      }
-    }],
-
     // Get rows from dynamodb
-    fromDdb: ['channelId', ({channelId}, cbk) => {
+    fromDdb: ['validate', ({}, cbk) => {
       if (!args.aws_access_key_id) {
         return cbk();
       }
@@ -70,7 +60,7 @@ module.exports = (args, cbk) => {
         aws_access_key_id: args.aws_access_key_id,
         aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
         aws_secret_access_key: args.aws_secret_access_key,
-        channel_id: channelId,
+        channel: args.channel,
         limit: args.limit,
         network: args.network,
         to_public_key: args.to_public_key,
@@ -79,14 +69,14 @@ module.exports = (args, cbk) => {
     }],
 
     // Get records from lmdb
-    fromLmdb: ['channelId', ({channelId}, cbk) => {
+    fromLmdb: ['validate', ({}, cbk) => {
       if (!args.lmdb_path) {
         return cbk();
       }
 
       return cbk(null, getEdgeRecords({
         after: args.after,
-        channel_id: channelId,
+        channel: args.channel,
         limit: args.limit,
         lmdb_path: args.lmdb_path,
         network: args.network,
@@ -101,8 +91,10 @@ module.exports = (args, cbk) => {
 
       const attempts = [].concat(ddbAttempts).concat(lmdbAttempts);
 
+      attempts.sort((a, b) => a.attempted_at > b.attempted_at ? -1 : 1);
+
       return cbk(null, {attempts});
-    }]
+    }],
   },
   returnResult({of: 'attempts'}, cbk));
 };

@@ -1,3 +1,5 @@
+const {rawChanId} = require('bolt07');
+
 const {chanIdHexLen} = require('./constants');
 const {chansDb} = require('./constants');
 const {getLmdbItem} = require('./../lmdb');
@@ -7,7 +9,7 @@ const networks = require('./conf/networks');
 /** Get channel
 
   {
-    id: <Channel Id Hex String>
+    id: <Standard Format Channel Id String>
     lmdb_path: <LMDB Path String>
     network: <Network Name String>
   }
@@ -50,8 +52,15 @@ module.exports = args => {
 
   const chain = networks.chain_ids[args.network];
   const db = chansDb;
+  let id;
 
-  const key = `${chain}${args.id}`;
+  try {
+    id = rawChanId({channel: args.id}).id;
+  } catch (err) {
+    throw new Error('ExpectedValidStandardFormatChannelIdToGetChannelRecord');
+  }
+
+  const key = `${chain}${id}`;
 
   try {
     const {item} = getLmdbItem({db, key, lmdb: lmdb({path: args.lmdb_path})});

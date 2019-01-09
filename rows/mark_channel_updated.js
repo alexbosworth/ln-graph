@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const {rawChanId} = require('bolt07');
 
 const {chainId} = require('./../chains');
 const {chansDb} = require('./constants');
@@ -12,7 +13,7 @@ const {updateDdbItem} = require('./../dynamodb');
     aws_access_key_id: <AWS Access Key Id String>
     aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_secret_access_key: <AWS Secret Access Key String>
-    id: <Channel Id to Check
+    id: <Standard Format Channel Id String>
     network: <Network Name String>
     updated_at: <Updated At ISO 8601 Date String>
   }
@@ -65,13 +66,22 @@ module.exports = (args, cbk) => {
       }
     }],
 
+    // Raw channel id
+    id: ['validate', ({}, cbk) => {
+      try {
+        return cbk(null, rawChanId({channel: args.id}).id);
+      } catch (err) {
+        return cbk([400, 'ExpectedStandardFormatChanIdToUpdateChan', err]);
+      }
+    }],
+
     // Update channel updated_at to avoid re-checking again too soon
-    update: ['chain', 'db', ({chain, db}, cbk) => {
+    update: ['chain', 'db', 'id', ({chain, db, id}, cbk) => {
       return updateDdbItem({
         db,
         changes: {updated_at: {set: args.updated_at}},
         table: `${args.aws_dynamodb_table_prefix}-${chansDb}`,
-        where: {key: `${chain}${args.id}`},
+        where: {key: `${chain}${id}`},
       },
       cbk);
     }],

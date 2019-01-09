@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const {rawChanId} = require('bolt07');
 
 const {activityDb} = require('./constants');
 const {activityTypes} = require('./constants');
@@ -21,7 +22,7 @@ const {updateDdbItem} = require('./../dynamodb');
     [aws_access_key_id]: <AWS Access Key Id String>
     [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
     [aws_secret_access_key]: <AWS Secret Access Key String>
-    channel_id: <Channel Id Number String>
+    channel: <Standard Format Channel Id String>
     [lmdb_path]: <LMDB Path String>
     network: <Network Name String>
     to_public_key: <Activity Towards Public Key Hex String>
@@ -42,7 +43,7 @@ module.exports = (args, cbk) => {
         return cbk([400, 'ExpectedAccessKeyOrLmdbPathForEdgeActivityRecord']);
       }
 
-      if (!args.channel_id) {
+      if (!args.channel) {
         return cbk([400, 'ExpectedChannelIdForEdgeActivity']);
       }
 
@@ -107,20 +108,29 @@ module.exports = (args, cbk) => {
         aws_access_key_id: args.aws_access_key_id,
         aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
         aws_secret_access_key: args.aws_secret_access_key,
-        id: args.channel_id,
+        id: args.channel,
         network: args.network,
       },
       cbk);
     }],
 
+    // Raw channel id
+    id: ['validate', ({}, cbk) => {
+      try {
+        return cbk(null, rawChanId({channel: args.channel}).id);
+      } catch (err) {
+        return cbk([400, 'ExpectedStandardChannelIdToRecordEdgeActivity']);
+      }
+    }],
+
     // Record activity in ddb
-    putInDynamodb: ['chain', 'ddb', ({chain, ddb}, cbk) => {
+    putInDynamodb: ['chain', 'ddb', 'id', ({chain, ddb, id}, cbk) => {
       if (!ddb) {
         return cbk();
       }
 
       const db = ddb;
-      const edge = `${args.to_public_key}${chain}${args.channel_id}`;
+      const edge = `${args.to_public_key}${chain}${id}`;
       const table = `${args.aws_dynamodb_table_prefix}-${activityDb}`;
 
       // Create the row
@@ -135,8 +145,8 @@ module.exports = (args, cbk) => {
     }],
 
     // Record activity in lmdb
-    putInLmdb: ['chain', ({chain}, cbk) => {
-      if (!args.lmdb) {
+    putInLmdb: ['chain', 'id', ({chain, id}, cbk) => {
+      if (!args.lmdb_path) {
         return cbk();
       }
 
@@ -150,17 +160,10 @@ module.exports = (args, cbk) => {
         return cbk([500, 'ExpectedValidEdgeNumber']);
       }
 
-      const keyComponents = [
-        args.to_public_key,
-        chain,
-        args.channel_id,
-        recordNumber,
-      ];
-
       try {
         putLmdbItem({
           db: activityDb,
-          key: keyComponents.join(''),
+          key: [args.to_public_key, chain, id, recordNumber].join(''),
           lmdb: lmdb({path: args.lmdb_path}),
           value: {tokens: args.tokens, type: args.type},
         });
@@ -176,7 +179,8 @@ module.exports = (args, cbk) => {
       'chain',
       'ddb',
       'getChannel',
-      ({chain, ddb, getChannel}, cbk) =>
+      'id',
+      ({chain, ddb, getChannel, id}, cbk) =>
     {
       // Exit early when not writing to dynamodb
       if (!ddb) {
@@ -199,7 +203,7 @@ module.exports = (args, cbk) => {
 
       const db = ddb;
       const changes = {};
-      const key = `${chain}${args.channel_id}`;
+      const key = `${chain}${id}`;
       const n = !keys.indexOf(args.to_public_key) ? 2 : 1;
       const table = `${args.aws_dynamodb_table_prefix}-${chansDb}`;
 

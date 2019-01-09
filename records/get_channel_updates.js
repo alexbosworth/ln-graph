@@ -1,3 +1,6 @@
+const {rawChanId} = require('bolt07');
+
+const {chainId} = require('./../chains');
 const {chanIdHexLen} = require('./constants');
 const {decrementingNumberForDate} = require('./../dates');
 const {lmdb} = require('./../lmdb');
@@ -9,7 +12,7 @@ const {updatesDb} = require('./constants');
 
   {
     [after]: <After ISO 8601 Date String>
-    id: <Channel Id Hex String>
+    id: <Standard Channel Format Id String>
     [limit]: <Limit of Historical Entries Number>
     lmdb_path: <LMDB Path String>
     network: <Network Name String>
@@ -37,7 +40,7 @@ const {updatesDb} = require('./constants');
   }
 */
 module.exports = args => {
-  if (!args.id || args.id.length !== chanIdHexLen) {
+  if (!args.id) {
     throw new Error('ExpectedChannelIdToGetChannelUpdatesFor');
   }
 
@@ -45,13 +48,26 @@ module.exports = args => {
     throw new Error('ExpectedLmdbPathToGetChannelUpdates');
   }
 
-  if (!args.network || !networks.chain_ids[args.network]) {
+  if (!args.network) {
     throw new Error('ExpectedNetworkToGetChannelUpdates');
   }
 
-  const chainId = networks.chain_ids[args.network];
+  let chain;
   const db = updatesDb;
-  let start = null;
+  let id;
+  let start;
+
+  try {
+    chain = chainId({network: args.network}).chain_id;
+  } catch (err) {
+    throw new Error('ExpectedKnownNetworkToGetCHannelUpdates');
+  }
+
+  try {
+    id = rawChanId({channel: args.id}).id;
+  } catch (err) {
+    throw new Error('ExpectedValidStandardChannelIdToGetChannelUpdates');
+  }
 
   try {
     start = !args.after ? '' : decrementingNumberForDate({date: args.after});
@@ -61,7 +77,7 @@ module.exports = args => {
 
   const where = {
     before: !start ? undefined : start.number,
-    starts_with: `${chainId}${args.id}`,
+    starts_with: `${chain}${id}`,
   };
 
   try {

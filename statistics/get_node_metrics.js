@@ -78,7 +78,7 @@ module.exports = (args, cbk) => {
             // Get the history of edge traversal attempts
             const {attempts} = getEdgeRecords({
               after: args.after,
-              channel_id: id,
+              channel: id,
               limit: [policy.public_key].length,
               lmdb_path: args.lmdb_path,
               network: args.network,

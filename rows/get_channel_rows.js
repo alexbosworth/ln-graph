@@ -23,7 +23,7 @@ const {queryDdb} = require('./../dynamodb');
     channels: [{
       capacity: <Capacity Tokens Number>
       [close_height]: <Close Height Number>
-      id: <Channel Raw Id Hex String>
+      id: <Standard Format Channel Id String>
       policies: [{
         alias: <Cached Alias String>
         [attempted]: <Attempt Result String>

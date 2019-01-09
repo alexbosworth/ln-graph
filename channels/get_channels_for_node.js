@@ -1,7 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncEachLimit = require('async/eachLimit');
 const asyncMapSeries = require('async/mapSeries');
-const {chanFormat} = require('bolt07');
 const {shuffle} = require('lodash');
 const {take} = require('lodash');
 
@@ -33,7 +32,7 @@ const {now} = Date;
     channels: [{
       capacity: <Capacity Tokens Number>
       [close_height]: <Close Height Number>
-      id: <Channel Raw Id Hex String>
+      id: <Standard Format Channel Id String>
       policies: [{
         [alias]: <Alias String>
         [attempted]: <Attempted Result String>
@@ -155,19 +154,11 @@ module.exports = (args, cbk) => {
           return cbk(null, channel);
         }
 
-        let channelId;
-
-        try {
-          channelId = chanFormat({id: channel.id}).channel;
-        } catch (err) {
-          return cbk([500, 'InvalidChannelIdInChannelRowsForNode']);
-        }
-
         return getChannel({
           aws_access_key_id: args.aws_access_key_id,
           aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
           aws_secret_access_key: args.aws_secret_access_key,
-          channel: channelId,
+          id: channel.id,
           lmdb_path: args.lmdb_path,
           lnd: args.lnd,
           network: args.network,
@@ -179,6 +170,7 @@ module.exports = (args, cbk) => {
             return code === 404 ? cbk() : cbk(err);
           }
 
+          // Exit early when this channel is marked as closed
           if (!!res.channel.close_height) {
             return cbk();
           }

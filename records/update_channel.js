@@ -15,7 +15,7 @@ const serverErr = 500;
     [aws_secret_access_key]: <AWS Secret Access Key String>
     [base_fee_mtokens]: <Channel Base Fee Millitokens String>
     capacity: <Channel Capacity Tokens Number>
-    channel_id: <Channel Id String>
+    id: <Standard Format Channel Id String>
     [cltv_delta]: <Channel CLTV Delta Number>
     [fee_rate]: <Channel Feel Rate In Millitokens Per Million Number>
     [is_disabled]: <Channel Is Disabled Bool>
@@ -69,12 +69,6 @@ module.exports = (args, cbk) => {
     });
   }
 
-  update.capacity = args.capacity;
-  update.channel_id = args.channel_id;
-  update.network = args.network;
-  update.transaction_id = args.transaction_id;
-  update.transaction_vout = args.transaction_vout;
-
   return asyncRetry(
     {
       errorFilter: err => Array.isArray(err) && err[errCodeIndex] >= serverErr,
@@ -86,10 +80,10 @@ module.exports = (args, cbk) => {
         aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
         aws_access_key_id: args.aws_access_key_id,
         aws_secret_access_key: args.aws_secret_access_key,
-        capacity: update.capacity,
-        channel_id: update.channel_id,
+        capacity: args.capacity,
+        id: args.id,
         lmdb_path: args.lmdb_path,
-        network: update.network,
+        network: args.network,
         node1_base_fee_mtokens: update.node1_base_fee_mtokens,
         node1_cltv_delta: update.node1_cltv_delta,
         node1_fee_rate: update.node1_fee_rate,
@@ -104,8 +98,8 @@ module.exports = (args, cbk) => {
         node2_min_htlc_mtokens: update.node2_min_htlc_mtokens,
         node2_public_key: update.node2_public_key,
         node2_updated_at: update.node2_updated_at,
-        transaction_id: update.transaction_id,
-        transaction_vout: update.transaction_vout,
+        transaction_id: args.transaction_id,
+        transaction_vout: args.transaction_vout,
       },
       (err, res) => {
         // Avoid reporting conflict errors

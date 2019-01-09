@@ -1,8 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
-const {chanNumber} = require('bolt07');
 const {getChannel} = require('ln-service');
-const {rawChanId}  = require('bolt07');
 
 const {getChannelRecord} = require('./../records');
 const {getChannelRow} = require('./../rows');
@@ -17,7 +15,7 @@ const {updateChannelMetadata} = require('./../rows');
     [aws_access_key_id]: <AWS Access Key Id String>
     [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
     [aws_secret_access_key]: <AWS Secret Access Key String>
-    channel: <Channel Id String>
+    id: <Standard Format Channel Id String>
     [lmdb_path]: <LMDB Path String>
     [lnd]: <LND Object>
     network: <Network Name String>
@@ -47,7 +45,7 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
-      if (!args.channel) {
+      if (!args.id) {
         return cbk([400, 'ExpectedChannelIdToGetChannel']);
       }
 
@@ -62,34 +60,25 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
-    // Raw channel id
-    id: ['validate', ({}, cbk) => {
-      try {
-        return cbk(null, rawChanId({channel: args.channel}).id);
-      } catch (err) {
-        return cbk([400, 'ExpectedValidChannelIdToGetChannelDetails']);
-      }
-    }],
-
     // Get channel from lmdb
-    getChanFromLmdb: ['id', ({id}, cbk) => {
+    getChanFromLmdb: ['validate', ({}, cbk) => {
       if (!args.lmdb_path) {
         return cbk();
       }
 
       try {
         return cbk(null, getChannelRecord({
-          id,
+          id: args.id,
           lmdb_path: args.lmdb_path,
           network: args.network,
         }));
       } catch (err) {
-        return cbk([500, 'UnexpectedErrorGettingChannelFromChannelRecord']);
+        return cbk([500, 'UnexpectedErrGettingChannelFromChannelRecord', err]);
       }
     }],
 
     // Get channel from dynamodb
-    getChanFromDdb: ['getChanFromLmdb', 'id', ({getChanFromLmdb, id}, cbk) => {
+    getChanFromDdb: ['getChanFromLmdb', ({getChanFromLmdb}, cbk) => {
       // Skip Dynamodb when lmdb already returned a result
       if (!!getChanFromLmdb && !!getChanFromLmdb.channel) {
         return cbk();
@@ -101,10 +90,10 @@ module.exports = (args, cbk) => {
       }
 
       return getChannelRow({
-        id,
         aws_access_key_id: args.aws_access_key_id,
         aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
         aws_secret_access_key: args.aws_secret_access_key,
+        id: args.id,
         network: args.network,
       },
       cbk);
@@ -114,9 +103,9 @@ module.exports = (args, cbk) => {
     getChanFromLnd: [
       'getChanFromDdb',
       'getChanFromLmdb',
-      'id',
-      ({getChanFromDdb, getChanFromLmdb, id}, cbk) =>
+      ({getChanFromDdb, getChanFromLmdb}, cbk) =>
     {
+      // Skip getting from lnd when the channel and policies are known from ddb
       if (!!getChanFromDdb && !!getChanFromDdb.channel) {
         const {policies} = getChanFromDdb.channel;
 
@@ -125,19 +114,16 @@ module.exports = (args, cbk) => {
         }
       }
 
+      // Skip getting from lnd when the channel and policies are ok from lmdb
       if (!!getChanFromLmdb && !!getChanFromLmdb.channel) {
-        return cbk();
+        const {policies} = getChanFromLmdb.channel;
+
+        if (!!policies && !policies.find(n => !n.public_key)) {
+          return cbk();
+        }
       }
 
-      let chanId;
-
-      try {
-        chanId = chanNumber({id}).number;
-      } catch (err) {
-        return cbk([500, 'FailedToGetChannelNumberWhenGettingChannel', err]);
-      }
-
-      return getChannel({id: chanId, lnd: args.lnd}, cbk);
+      return getChannel({id: args.id, lnd: args.lnd}, cbk);
     }],
 
     // Final channel details
@@ -145,7 +131,7 @@ module.exports = (args, cbk) => {
       'getChanFromDdb',
       'getChanFromLmdb',
       'getChanFromLnd',
-      ({getChanFromLmdb, getChanFromDdb, getChanFromLnd}, cbk) =>
+      ({getChanFromDdb, getChanFromLmdb, getChanFromLnd}, cbk) =>
     {
       if (!!getChanFromLnd) {
         return cbk(null, {channel: getChanFromLnd});
@@ -167,14 +153,16 @@ module.exports = (args, cbk) => {
     }],
 
     // Get node details
-    getNodes: ['gotChannel', 'id', ({gotChannel, id}, cbk) => {
+    getNodes: ['gotChannel', ({gotChannel}, cbk) => {
       const {policies} = gotChannel.channel;
 
       return asyncMap(policies, (policy, cbk) => {
+        // Exit early when an edge peer is unknown
         if (!policy.public_key) {
           return cbk(null, {});
         }
 
+        // Exit early when the alias and color are cached for this channel
         if (!!policy.alias && !!policy.color) {
           return cbk(null, {
             alias: policy.alias,
@@ -196,10 +184,12 @@ module.exports = (args, cbk) => {
             return cbk(err);
           }
 
+          // Exit early when the node is unknown
           if (!res.node) {
             return cbk(null, {});
           }
 
+          // Exit early when there is no need to the ddb channel node cache
           if (!args.aws_access_key_id) {
             return cbk(null, {
               alias: res.node.alias,
@@ -208,13 +198,14 @@ module.exports = (args, cbk) => {
             });
           }
 
+          // Update the channel with cached node metadata
           return updateChannelMetadata({
-            id,
             alias: res.node.alias,
             aws_access_key_id: args.aws_access_key_id,
             aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
             aws_secret_access_key: args.aws_secret_access_key,
             color: res.node.color,
+            id: args.id,
             index: policies.findIndex(n => n.public_key === policy.public_key),
             network: args.network,
             public_key: policy.public_key,
@@ -239,10 +230,12 @@ module.exports = (args, cbk) => {
     channel: ['gotChannel', 'getNodes', ({gotChannel, getNodes}, cbk) => {
       const {channel} = gotChannel;
 
+      // Treat closed channels as non-existing channels
       if (!!channel.close_height) {
         return cbk([404, 'ActiveChannelNotFound', channel]);
       }
 
+      // Add some node metadata to the channel policies
       const policiesWithNodeDetails = channel.policies.map(policy => {
         const node = getNodes.find(n => n.public_key === policy.public_key);
 
@@ -276,10 +269,12 @@ module.exports = (args, cbk) => {
       'gotChannel',
       ({getChanFromLmdb, gotChannel}, cbk) =>
     {
+      // Exit early when lmdb is not in use
       if (!args.lmdb_path) {
         return cbk();
       }
 
+      // Exit early when the channel exists in lmdb already
       if (!!getChanFromLmdb && !!getChanFromLmdb.channel) {
         return cbk();
       }
@@ -290,7 +285,7 @@ module.exports = (args, cbk) => {
         return cbk(null, setChannelRecord({
           capacity: channel.capacity,
           close_height: channel.close_height,
-          id: channel.id,
+          id: args.id,
           lmdb_path: args.lmdb_path,
           network: args.network,
           policies: channel.policies,
@@ -299,7 +294,7 @@ module.exports = (args, cbk) => {
           updated_at: channel.updated_at,
         }));
       } catch (err) {
-        return cbk([500, 'FailedToSetChannelRecordWhenGettingChannel']);
+        return cbk([500, 'FailedToSetChannelRecordWhenGettingChannel', err]);
       }
     }],
   },

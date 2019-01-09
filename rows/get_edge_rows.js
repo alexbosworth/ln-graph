@@ -1,3 +1,5 @@
+const {rawChanId} = require('bolt07');
+
 const {chainId} = require('./../chains');
 const {chansDb} = require('./constants');
 const {ddb} = require('./../dynamodb');
@@ -10,7 +12,7 @@ const {queryDdb} = require('./../dynamodb');
     aws_access_key_id: <AWS Access Key Id String>
     aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_secret_access_key: <AWS Secret Access Key String>
-    channel_id: <Raw Channel Id Hex String>
+    channel: <Standard Format Channel Id String>
     [limit]: <Limit Number>
     network: <Network Name String>
     to_public_key: <Public Key Hex String>
@@ -38,7 +40,7 @@ module.exports = (args, cbk) => {
     return cbk([400, 'ExpectedAwsSecretAccessKeyToGetEdgeRows']);
   }
 
-  if (!args.channel_id) {
+  if (!args.channel) {
     return cbk([400, 'ExpectedChannelIdToGetEdgeRows']);
   }
 
@@ -52,6 +54,7 @@ module.exports = (args, cbk) => {
 
   let chain;
   let db;
+  let id;
   const table = `${args.aws_dynamodb_table_prefix}-${chansDb}`;
 
   try {
@@ -69,12 +72,18 @@ module.exports = (args, cbk) => {
     return cbk([500, 'FailedToGetDdbConnectionForEdgeRowsFetch', err]);
   }
 
+  try {
+    id = rawChanId({channel: args.channel}).id;
+  } catch (err) {
+    return cbk([400, 'ExpectedValidChannelIdToGetEdgeRows', err]);
+  }
+
   return queryDdb({
     db,
     is_descending: true,
     limit: args.limit || undefined,
     table: `${args.aws_dynamodb_table_prefix}-${edgeActivityDb}`,
-    where: {edge: {eq: `${args.to_public_key}${chain}${args.channel_id}`}},
+    where: {edge: {eq: `${args.to_public_key}${chain}${id}`}},
   },
   (err, res) => {
     if (!!err) {
