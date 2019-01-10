@@ -545,6 +545,10 @@ module.exports = (args, cbk) => {
       const expect = {updated_at: getChanFromDdb.item.updated_at};
       const table = `${args.aws_dynamodb_table_prefix}-${chansDb}`;
 
+      if (!getChanFromDdb.item.capacity) {
+        changes.capacity = {set: args.capacity};
+      }
+
       Object.keys(ddbChanUpdate.updates)
         .filter(attr => ddbChanUpdate.updates[attr] !== undefined)
         .forEach(attr => changes[attr] = {set: ddbChanUpdate.updates[attr]});

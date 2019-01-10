@@ -1,7 +1,6 @@
 {
   "chansDb": "channels",
-  "checkLimit": 4,
+  "checkLimit": 2,
   "unknownCloseHeight": -1,
-  "updateWindowMs": 604800000
+  "updateWindowMs": 1209600000
 }
-

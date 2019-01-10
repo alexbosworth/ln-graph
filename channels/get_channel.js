@@ -7,6 +7,7 @@ const {getChannelRow} = require('./../rows');
 const {getNode} = require('./../nodes');
 const {returnResult} = require('./../async');
 const {setChannelRecord} = require('./../records');
+const {updateChannelDetails} = require('./../rows');
 const {updateChannelMetadata} = require('./../rows');
 
 /** Get a channel, using different strategies
@@ -99,19 +100,31 @@ module.exports = (args, cbk) => {
       cbk);
     }],
 
+    // Determine if the channel in ddb is complete
+    hasDdbChan: ['getChanFromDdb', ({getChanFromDdb}, cbk) => {
+      // Exit early when there is no ddb row
+      if (!getChanFromDdb || !getChanFromDdb.channel) {
+        return cbk();
+      }
+
+      const {policies} = getChanFromDdb.channel;
+
+      const hasCapacity = getChanFromDdb.channel.capacity !== undefined;
+      const hasPolicies = !!policies && !policies.find(n => !n.public_key);
+
+      return cbk(null, hasCapacity && hasPolicies);
+    }],
+
     // Get channel from lnd
     getChanFromLnd: [
       'getChanFromDdb',
       'getChanFromLmdb',
-      ({getChanFromDdb, getChanFromLmdb}, cbk) =>
+      'hasDdbChan',
+      ({getChanFromDdb, getChanFromLmdb, hasDdbChan}, cbk) =>
     {
       // Skip getting from lnd when the channel and policies are known from ddb
-      if (!!getChanFromDdb && !!getChanFromDdb.channel) {
-        const {policies} = getChanFromDdb.channel;
-
-        if (!!policies && !policies.find(n => !n.public_key)) {
-          return cbk();
-        }
+      if (!!hasDdbChan) {
+        return cbk();
       }
 
       // Skip getting from lnd when the channel and policies are ok from lmdb
@@ -124,6 +137,52 @@ module.exports = (args, cbk) => {
       }
 
       return getChannel({id: args.id, lnd: args.lnd}, cbk);
+    }],
+
+    // Update channel row with the freshest lnd data if appropraite
+    updateChannelRow: [
+      'getChanFromDdb',
+      'getChanFromLnd',
+      'hasDdbChan',
+      ({getChanFromDdb, getChanFromLnd, hasDdbChan}, cbk) =>
+    {
+      // Exit early when there is no channel to update
+      if (!getChanFromDdb || !getChanFromDdb.channel) {
+        return cbk();
+      }
+
+      // Exit early when there is no need to update the channel in ddb
+      if (!getChanFromLnd) {
+        return cbk();
+      }
+
+      const channel = getChanFromLnd;
+      const existing = getChanFromDdb.channel;
+
+      return updateChannelDetails({
+        aws: {
+          aws_access_key_id: args.aws_access_key_id,
+          aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
+          aws_secret_access_key: args.aws_secret_access_key,
+        },
+        channel: {
+          capacity: channel.capacity,
+          policies: channel.policies,
+          transaction_id: channel.transaction_id,
+          transaction_vout: channel.transaction_vout,
+          updated_at: channel.updated_at,
+        },
+        existing: {
+          capacity: existing.capacity,
+          policies: existing.policies,
+          transaction_id: existing.transaction_id,
+          transaction_vout: existing.transaction_vout,
+          updated_at: existing.updated_at,
+        },
+        id: args.id,
+        network: args.network,
+      },
+      cbk);
     }],
 
     // Final channel details

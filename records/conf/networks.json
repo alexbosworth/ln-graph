@@ -1,10 +1,12 @@
 {
   "chain_ids": {
     "btc": "00",
-    "btctestnet": "01"
+    "btctestnet": "01",
+    "ltc": "02"
   },
   "codes": {
     "bitcoin": "btc",
+    "litecoin": "ltc",
     "testnet": "btctestnet"
   }
 }

@@ -1,7 +1,8 @@
 {
   "chainIds": {
     "btc": "00",
-    "btctestnet": "01"
+    "btctestnet": "01",
+    "ltc": "02"
   }
 }
 

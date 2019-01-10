@@ -74,6 +74,10 @@ module.exports = (args, cbk) => {
     chain = networks.chain_ids[networks.codes.bitcoin];
     break;
 
+  case (networks.codes.litecoin):
+    chain = networks.chain_ids[networks.codes.litecoin];
+    break;
+
   case (networks.codes.testnet):
     chain = networks.chain_ids[networks.codes.testnet];
     break;

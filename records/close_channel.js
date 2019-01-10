@@ -94,7 +94,7 @@ module.exports = (args, cbk) => {
     }],
 
     // Channel key
-    key: ['chain', ({chain, id}, cbk) => cbk(null, `${chain}${id}`)],
+    key: ['chain', 'id', ({chain, id}, cbk) => cbk(null, `${chain}${id}`)],
 
     // Get the current state of the channel from dynamodb
     getChanFromDdb: ['db', 'key', ({db, key}, cbk) => {
