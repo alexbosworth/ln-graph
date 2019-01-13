@@ -582,7 +582,7 @@ module.exports = (args, cbk) => {
 
       Object.keys(lmdbChanUpdate.updates)
         .filter(attr => lmdbChanUpdate.updates[attr] !== undefined)
-        .forEach(attr => changes[attr] = {set: lmdbChanUpdate[attr]});
+        .forEach(attr => changes[attr] = {set: lmdbChanUpdate.updates[attr]});
 
       try {
         updateLmdbItem({changes, expect, key, lmdb, db: chansDb});

@@ -184,8 +184,6 @@ module.exports = ({aws, channel, existing, id, network}, cbk) => {
 
       const table = `${aws.aws_dynamodb_table_prefix}-${chansDb}`;
 
-      console.log("UPDATE", id, changes);
-
       return updateDdbItem({changes, db, table, where: {key}}, cbk);
     }],
   },
