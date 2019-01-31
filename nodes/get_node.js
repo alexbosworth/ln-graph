@@ -30,7 +30,7 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
-      if (!args.aws_access_key_id && !args.lmdb && !args.lnd) {
+      if (!args.aws_access_key_id && !args.lmdb_path && !args.lnd) {
         return cbk([400, 'ExpectedAwsOrLmdbOrLndForNodeLookup']);
       }
 

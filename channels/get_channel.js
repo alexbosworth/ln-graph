@@ -149,6 +149,10 @@ module.exports = (args, cbk) => {
         return cbk();
       }
 
+      if (!args.lnd) {
+        return cbk([404, 'ChannelRecordNotFound']);
+      }
+
       return getChannel({id: args.id, lnd: args.lnd}, cbk);
     }],
 
