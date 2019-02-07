@@ -31,7 +31,6 @@ const {now} = Date;
   {
     channels: [{
       capacity: <Capacity Tokens Number>
-      [close_height]: <Close Height Number>
       id: <Standard Format Channel Id String>
       policies: [{
         [alias]: <Alias String>

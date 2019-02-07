@@ -174,9 +174,6 @@ module.exports = (args, cbk) => {
         const other = policies.find(n => n.public_key !== policy.public_key);
 
         return updateChannel({
-          aws_access_key_id: args.aws_access_key_id,
-          aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
-          aws_secret_access_key: args.aws_secret_access_key,
           base_fee_mtokens: policy.base_fee_mtokens,
           capacity: getChanFromLnd.capacity,
           id: args.id,
@@ -196,7 +193,7 @@ module.exports = (args, cbk) => {
       cbk);
     }],
 
-    // Update channel row with the freshest lnd data if appropraite
+    // Update channel row with the freshest lnd data if appropriate
     updateChannelRow: [
       'getChanFromDdb',
       'getChanFromLnd',

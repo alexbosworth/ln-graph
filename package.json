@@ -3,7 +3,7 @@
   "dependencies": {
     "a-star-for-async-data": "1.0.3",
     "async": "2.6.1",
-    "aws-sdk": "2.395.0",
+    "aws-sdk": "2.398.0",
     "bolt07": "1.4.0",
     "bn.js": "4.11.8",
     "ln-service": "33.1.0",
@@ -13,7 +13,7 @@
   "description": "Record keeping for Lightning Network graph updates",
   "devDependencies": {
     "rimraf": "2.6.3",
-    "tap": "12.5.0",
+    "tap": "12.5.1",
     "uuid": "3.3.2"
   },
   "license": "MIT",
@@ -26,5 +26,5 @@
   "scripts": {
     "test": "tap test/dates/*.js test/lmdb/*.js test/statistics/*.js"
   },
-  "version": "2.0.3"
+  "version": "2.0.4"
 }

@@ -4,6 +4,7 @@ const {rawChanId} = require('bolt07');
 const {ddb} = require('./../dynamodb');
 const {chainId} = require('./../chains');
 const {chansDb} = require('./constants');
+const getChannelRow = require('./get_channel_row');
 const {returnResult} = require('./../async');
 const {updateDdbItem} = require('./../dynamodb');
 
@@ -77,6 +78,18 @@ module.exports = (args, cbk) => {
       }
     }],
 
+    // Get existing channel
+    getChannel: ['validate', ({}, cbk) => {
+      return getChannelRow({
+        aws_access_key_id: args.aws_access_key_id,
+        aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
+        aws_secret_access_key: args.aws_secret_access_key,
+        id: args.id,
+        network: args.network,
+      },
+      cbk);
+    }],
+
     // The db uses the raw channel id
     id: ['validate', ({}, cbk) => {
       try {
@@ -86,8 +99,44 @@ module.exports = (args, cbk) => {
       }
     }],
 
+    // Determine if the metadata is fresh
+    isFresh: ['getChannel', ({getChannel}, cbk) => {
+      if (!getChannel.channel) {
+        return cbk(null, false);
+      }
+
+      const {policies} = getChannel.channel;
+
+      const policy = policies.find(n => n.public_key === args.public_key);
+
+      if (!policy) {
+        return cbk(null, false);
+      }
+
+      if (policy.alias !== args.alias) {
+        return cbk(null, true);
+      }
+
+      if (policy.color !== args.color) {
+        return cbk(null, true);
+      }
+
+      return cbk(null, false);
+    }],
+
     // Update the channel metadata
-    update: ['chain', 'db', 'id', ({chain, db, id}, cbk) => {
+    update: [
+      'chain',
+      'db',
+      'id',
+      'isFresh',
+      ({chain, db, id, isFresh}, cbk) =>
+    {
+      // Exit early when no update is required
+      if (!!isFresh) {
+        return cbk();
+      }
+
       const changes = {};
       const key = `${chain}${id}`;
       const n = args.index + [id].length;
