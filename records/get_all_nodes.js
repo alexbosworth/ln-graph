@@ -63,4 +63,3 @@ module.exports = args => {
     throw new Error('FailedToGetNodes');
   }
 };
-

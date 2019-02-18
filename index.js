@@ -1,5 +1,6 @@
 const {calculateStability} = require('./statistics');
 const {closeChannel} = require('./records');
+const {getAllChannels} = require('./records');
 const {getAllNodes} = require('./records');
 const {getChanRecordsForNode} = require('./records');
 const {getChannel} = require('./channels');
@@ -22,6 +23,7 @@ const {updateNode} = require('./records');
 module.exports = {
   calculateStability,
   closeChannel,
+  getAllChannels,
   getAllNodes,
   getChanRecordsForNode,
   getChannel,

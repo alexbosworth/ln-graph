@@ -1,4 +1,5 @@
 const closeChannel = require('./close_channel');
+const getAllChannels = require('./get_all_channels');
 const getAllNodes = require('./get_all_nodes');
 const getChanRecordsForNode = require('./get_chan_records_for_node');
 const getChannelHistory = require('./get_channel_history');
@@ -15,6 +16,7 @@ const updateNode = require('./update_node');
 */
 module.exports = {
   closeChannel,
+  getAllChannels,
   getAllNodes,
   getChanRecordsForNode,
   getChannelHistory,
