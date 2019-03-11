@@ -155,7 +155,7 @@ module.exports = (args, cbk) => {
       ({getLmdbChan, key, lmdb, lmdbChanUpdate}, cbk) =>
     {
       // Exit early when there is no need to update the lmdb channel
-      if (!lmdb || !getLmdbChan.item || !getLmdbChan.item.close_height) {
+      if (!lmdb || !getLmdbChan.item || !!getLmdbChan.item.close_height) {
         return cbk();
       }
 
