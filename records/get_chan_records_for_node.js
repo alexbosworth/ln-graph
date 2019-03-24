@@ -58,10 +58,10 @@ module.exports = args => {
     throw new Error('ExpectedValidNetworkToGetChannelsForNode');
   }
 
-  const where = {starts_with: `${args.public_key}${chain}`};
+  const keys = {starts_with: `${args.public_key}${chain}`};
 
   try {
-    const {items} = queryLmdb({db, where, lmdb: lmdb({path: args.lmdb_path})});
+    const {items} = queryLmdb({db, keys, lmdb: lmdb({path: args.lmdb_path})});
 
     // The raw channel ids are the keys of the items, after the pubkey, chain
     const chanIds = items.map(({key}) => key.slice(pkHexLen + chainIdHexLen));
@@ -108,4 +108,3 @@ module.exports = args => {
     throw new Error('FailedToQueryChannelsForNode');
   }
 };
-

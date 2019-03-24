@@ -10,6 +10,7 @@ const {getChannelUpdates} = require('./records');
 const {getChannelsForNode} = require('./channels');
 const {getEdgeHistory} = require('./edges');
 const {getEdgeRecords} = require('./records');
+const {getLastAttempts} = require('./edges');
 const {getNode} = require('./nodes');
 const {getNodeMetrics} = require('./statistics');
 const {getNodeRecord} = require('./records');
@@ -33,6 +34,7 @@ module.exports = {
   getChannelsForNode,
   getEdgeHistory,
   getEdgeRecords,
+  getLastAttempts,
   getNode,
   getNodeMetrics,
   getNodeRecord,
@@ -41,4 +43,3 @@ module.exports = {
   updateChannel,
   updateNode,
 };
-

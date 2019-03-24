@@ -74,9 +74,9 @@ module.exports = args => {
   try {
     const {items} = queryLmdb({
       db: activityDb,
+      keys: {before: !start ? undefined : start.number, starts_with: edge},
       limit: args.limit,
       lmdb: lmdb({path: args.lmdb_path}),
-      where: {before: !start ? undefined : start.number, starts_with: edge},
     });
 
     const attempts = items.map(({key, data}) => {
@@ -98,4 +98,3 @@ module.exports = args => {
     throw new Error('FailedToQueryEdgeHistory');
   }
 }
-

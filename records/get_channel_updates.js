@@ -75,7 +75,7 @@ module.exports = args => {
     throw new Error('FailedToDeriveStartDateForChannelUpdatesQuery');
   }
 
-  const where = {
+  const keys = {
     before: !start ? undefined : start.number,
     starts_with: `${chain}${id}`,
   };
@@ -83,7 +83,7 @@ module.exports = args => {
   try {
     const {items} = queryLmdb({
       db,
-      where,
+      keys,
       limit: args.limit,
       lmdb: lmdb({path: args.lmdb_path}),
     });
@@ -110,4 +110,3 @@ module.exports = args => {
     throw new Error('FailedToQueryChannelUpdates');
   }
 };
-

@@ -9,7 +9,9 @@ const {queryLmdb} = require('./../lmdb');
 /** Get all channels
 
   {
+    [is_active]: <Is Active Bool>>
     lmdb_path: <LMDB Path String>
+    [min_capacity]: <Minimum Capacity Tokens Number>
     network: <Network Name String>
   }
 
@@ -47,12 +49,22 @@ module.exports = args => {
 
   const chainId = chainIds[args.network];
   const db = chansDb;
+  const minCapacity = args.min_capacity;
+
+  const where = {};
+
+  // Require that the channel is active on both sides
+  if (!!args.is_active) {
+    where.node1_is_disabled = {eq: false};
+    where.node2_is_disabled = {eq: false};
+  }
 
   try {
     const {items} = queryLmdb({
       db,
+      keys: {starts_with: chainId},
       lmdb: lmdb({path: args.lmdb_path}),
-      where: {starts_with: chainId},
+      where: !minCapacity ? undefined : {capacity: {gt: minCapacity - 1}},
     });
 
     const channels = items.map(({data, key}) => {
