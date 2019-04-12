@@ -68,7 +68,7 @@ const {updatesDb} = require('./constants');
     [node2_min_htlc_mtokens]: <Minimum HTLC Millitokens String>
     [node2_public_key]: <Policy Public Key String>
     [node2_updated_at]: <Policy Updated At ISO 8601 Date String>
-    updated_at: <Updated At ISO 8601 Date String>
+    [updated_at]: <Updated At ISO 8601 Date String>
   }
 */
 module.exports = (args, cbk) => {

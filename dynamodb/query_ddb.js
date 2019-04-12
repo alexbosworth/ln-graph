@@ -2,6 +2,8 @@ const ddbRowFormattedValue = require('./ddb_row_formatted_value');
 const objAsDdbRow = require('./obj_as_ddb_row');
 const objFromDdbRow = require('./obj_from_ddb_row');
 
+const {isArray} = Array;
+
 /** Query for items
 
   {
@@ -96,7 +98,7 @@ module.exports = (args, cbk) => {
       return cbk([503, 'ExpectedResultsCountForDbQuery']);
     }
 
-    if (!Array.isArray(res.Items)) {
+    if (!isArray(res.Items)) {
       return cbk([503, 'ExpectedResultsArrayForDbQuery']);
     }
 
@@ -115,4 +117,3 @@ module.exports = (args, cbk) => {
     }
   });
 };
-

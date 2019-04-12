@@ -125,4 +125,3 @@ module.exports = ({changes, db, expect, table, where}, cbk) => {
     }
   });
 };
-

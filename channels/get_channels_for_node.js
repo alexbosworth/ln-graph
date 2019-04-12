@@ -21,6 +21,7 @@ const {now} = Date;
     [aws_access_key_id]: <AWS Access Key Id String>
     [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
     [aws_secret_access_key]: <AWS Secret Access Key String>
+    [limit]: <Limit of Channels to Return Number>
     [lmdb_path]: <LMDB Path String>
     [lnd]: <LND Object>
     network: <Network Name String>
@@ -97,6 +98,7 @@ module.exports = (args, cbk) => {
         aws_access_key_id: args.aws_access_key_id,
         aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
         aws_secret_access_key: args.aws_secret_access_key,
+        limit: args.limit,
         network: args.network,
         public_key: args.public_key,
       },

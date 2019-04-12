@@ -14,6 +14,7 @@ const {queryDdb} = require('./../dynamodb');
     aws_access_key_id: <AWS Access Key Id String>
     aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
     aws_secret_access_key: <AWS Secret Access Key String>
+    [limit]: <Channel Rows Limit Number>
     network: <Network Name String>
     public_key: <Public Key Hex String>
   }
@@ -92,8 +93,9 @@ module.exports = (args, cbk) => {
     return queryDdb({
       db,
       where,
-      is_descending: false,
+      is_descending: true,
       index: `node${n}_public_key-key-index`,
+      limit: args.limit,
       table: `${args.aws_dynamodb_table_prefix}-${chansDb}`,
     },
     (err, res) => {
