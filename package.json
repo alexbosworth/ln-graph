@@ -25,5 +25,5 @@
   "scripts": {
     "test": "tap test/dates/*.js test/lmdb/*.js test/statistics/*.js"
   },
-  "version": "2.2.2"
+  "version": "2.2.3"
 }
