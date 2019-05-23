@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
 const asyncMapSeries = require('async/mapSeries');
+const {returnResult} = require('asyncjs-util');
 
 const {getAllChannels} = require('./../records');
 const getEdgeHistory = require('./get_edge_history');
-const {returnResult} = require('./../async');
 
 /** Get the last edge attempts for all edges
 

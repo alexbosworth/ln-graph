@@ -2,15 +2,17 @@ const asyncAuto = require('async/auto');
 const asyncEachSeries = require('async/eachSeries');
 const asyncMap = require('async/map');
 const {getChannel} = require('ln-service');
+const {returnResult} = require('asyncjs-util');
 
 const {getChannelRecord} = require('./../records');
 const {getChannelRow} = require('./../rows');
 const {getNode} = require('./../nodes');
-const {returnResult} = require('./../async');
 const {setChannelRecord} = require('./../records');
 const {updateChannel} = require('./../records');
 const {updateChannelRowDetails} = require('./../rows');
 const {updateChannelMetadata} = require('./../rows');
+
+const {isArray} = Array;
 
 /** Get a channel, using different strategies
 
@@ -293,6 +295,15 @@ module.exports = (args, cbk) => {
           lnd: args.lnd,
         },
         (err, res) => {
+          // Exit early when the node is unknown
+          if (isArray(err)) {
+            const [code] = err;
+
+            if (code === 404) {
+              return cbk(null, {});
+            }
+          }
+
           if (!!err) {
             return cbk(err);
           }
@@ -350,7 +361,9 @@ module.exports = (args, cbk) => {
 
       // Add some node metadata to the channel policies
       const policiesWithNodeDetails = channel.policies.map(policy => {
-        const node = getNodes.find(n => n.public_key === policy.public_key);
+        const publicKey = policy.public_key;
+
+        const node = getNodes.find(n => n.public_key === publicKey) || {};
 
         return {
           alias: node.alias,
@@ -360,7 +373,7 @@ module.exports = (args, cbk) => {
           fee_rate: policy.fee_rate,
           is_disabled: policy.is_disabled,
           min_htlc_mtokens: policy.min_htlc_mtokens,
-          public_key: policy.public_key,
+          public_key: publicKey,
         };
       });
 

@@ -2,6 +2,7 @@ const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
 const asyncMap = require('async/map');
 const {rawChanId} = require('bolt07');
+const {returnResult} = require('asyncjs-util');
 
 const {chainId} = require('./../chains');
 const {chanIdHexLen} = require('./constants');
@@ -18,7 +19,6 @@ const {nodeNumbers} = require('./constants');
 const {nodesDb} = require('./constants');
 const {putDdbItem} = require('./../dynamodb');
 const {putLmdbItem} = require('./../lmdb');
-const {returnResult} = require('./../async');
 const {updateChannelMetadata} = require('./../rows');
 const {updateDdbItem} = require('./../dynamodb');
 const {updateLmdbItem} = require('./../lmdb');

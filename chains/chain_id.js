@@ -21,4 +21,3 @@ module.exports = ({network}) => {
 
   return {chain_id: chainIds[network]};
 };
-

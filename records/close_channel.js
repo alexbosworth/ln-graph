@@ -1,5 +1,6 @@
 const asyncAuto = require('async/auto');
 const {rawChanId} = require('bolt07');
+const {returnResult} = require('asyncjs-util');
 
 const chainIds = require('./conf/networks').chain_ids;
 const {chansDb} = require('./constants');
@@ -7,7 +8,6 @@ const {ddb} = require('./../dynamodb');
 const {getDdbItem} = require('./../dynamodb');
 const {getLmdbItem} = require('./../lmdb');
 const {lmdb} = require('./../lmdb');
-const {returnResult} = require('./../async');
 const {updateDdbItem}= require('./../dynamodb');
 const {updateLmdbItem} = require('./../lmdb');
 

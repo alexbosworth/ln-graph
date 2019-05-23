@@ -1,5 +1,6 @@
 const asyncAuto = require('async/auto');
 const isValidIso8601Date = require('vali-date');
+const {returnResult} = require('asyncjs-util');
 
 const changesForNode = require('./changes_for_node');
 const {colorLen} = require('./constants');
@@ -13,7 +14,6 @@ const {notFound} = require('./constants');
 const {pkHexLen} = require('./constants');
 const {putDdbItem} = require('./../dynamodb');
 const {putLmdbItem} = require('./../lmdb');
-const {returnResult} = require('./../async');
 const {updateDdbItem} = require('./../dynamodb');
 const {updateLmdbItem} = require('./../lmdb');
 

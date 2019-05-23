@@ -104,4 +104,3 @@ module.exports = args => {
     throw new Error('UnexpectedFailureSettingChannelRecord');
   }
 };
-

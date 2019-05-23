@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
 const {getNode} = require('ln-service');
+const {returnResult} = require('asyncjs-util');
 
 const {getNodeRecord} = require('./../records');
 const {getNodeRow} = require('./../rows');
-const {returnResult} = require('./../async');
 
 /** Get a node, using different strategies
 

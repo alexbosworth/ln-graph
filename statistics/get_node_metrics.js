@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {getChanRecordsForNode} = require('./../records');
 const {getEdgeRecords} = require('./../records');
-const {returnResult} = require('./../async');
 
 /** Get liquidity metrics for a node
 

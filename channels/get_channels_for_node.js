@@ -1,6 +1,7 @@
 const asyncAuto = require('async/auto');
 const asyncEachLimit = require('async/eachLimit');
 const asyncMapSeries = require('async/mapSeries');
+const {returnResult} = require('asyncjs-util');
 const {shuffle} = require('lodash');
 const {take} = require('lodash');
 
@@ -10,7 +11,6 @@ const {getChanRecordsForNode} = require('./../records');
 const getChannel = require('./get_channel');
 const {getChannelRecords} = require('./../records');
 const {getChannelRows} = require('./../rows');
-const {returnResult} = require('./../async');
 const {updateWindowMs} = require('./constants');
 
 const {now} = Date;
@@ -198,4 +198,3 @@ module.exports = (args, cbk) => {
   },
   returnResult({of: 'channels'}, cbk));
 };
-

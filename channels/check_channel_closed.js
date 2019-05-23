@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
 const {getChannel} = require('ln-service');
+const {returnResult} = require('asyncjs-util');
 
 const {closeChannel} = require('./../records');
 const {markChannelUpdated} = require('./../rows');
-const {returnResult} = require('./../async');
 const {unknownCloseHeight} = require('./constants');
 
 /** Check if a channel is closed and update it as closed if it is
@@ -105,4 +105,3 @@ module.exports = (args, cbk) => {
   },
   returnResult({}, cbk));
 };
-

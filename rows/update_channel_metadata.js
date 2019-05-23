@@ -1,11 +1,11 @@
 const asyncAuto = require('async/auto');
 const {rawChanId} = require('bolt07');
+const {returnResult} = require('asyncjs-util');
 
 const {ddb} = require('./../dynamodb');
 const {chainId} = require('./../chains');
 const {chansDb} = require('./constants');
 const getChannelRow = require('./get_channel_row');
-const {returnResult} = require('./../async');
 const {updateDdbItem} = require('./../dynamodb');
 
 /** Update channel extra metadata

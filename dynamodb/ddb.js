@@ -34,4 +34,3 @@ module.exports = args => {
     secretAccessKey: args.secret_access_key,
   });
 };
-

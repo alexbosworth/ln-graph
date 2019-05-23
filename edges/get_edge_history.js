@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {getEdgeRecords} = require('./../records');
 const {getEdgeRows} = require('./../rows');
-const {returnResult} = require('./../async');
 
 /** Get edge history
 
