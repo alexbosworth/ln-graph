@@ -26,7 +26,7 @@ const {isArray} = Array;
     network: <Network Name String>
   }
 
-  @returns
+  @returns via cbk
   {
     [channel] {
       capacity: <Maximum Tokens Number>
