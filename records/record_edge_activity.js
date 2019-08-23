@@ -23,7 +23,7 @@ const {updateDdbItem} = require('./../dynamodb');
     [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
     [aws_secret_access_key]: <AWS Secret Access Key String>
     channel: <Standard Format Channel Id String>
-    [lmdb_path]: <LMDB Path String>
+    lmdb_path: <LMDB Path String>
     network: <Network Name String>
     to_public_key: <Activity Towards Public Key Hex String>
     tokens: <Tokens Number>
@@ -37,10 +37,6 @@ module.exports = (args, cbk) => {
     validate: cbk => {
       if (!args.attempted_at) {
         return cbk([400, 'ExpectedAttemptedAtDateForEdgeActivity']);
-      }
-
-      if (!args.aws_access_key_id && !args.lmdb) {
-        return cbk([400, 'ExpectedAccessKeyOrLmdbPathForEdgeActivityRecord']);
       }
 
       if (!args.channel) {
@@ -146,10 +142,6 @@ module.exports = (args, cbk) => {
 
     // Record activity in lmdb
     putInLmdb: ['chain', 'id', ({chain, id}, cbk) => {
-      if (!args.lmdb_path) {
-        return cbk();
-      }
-
       let recordNumber;
 
       try {
