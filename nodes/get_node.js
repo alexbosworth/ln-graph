@@ -86,7 +86,12 @@ module.exports = (args, cbk) => {
         return cbk();
       }
 
-      return getNode({lnd: args.lnd, public_key: args.public_key}, cbk);
+      return getNode({
+        is_omitting_channels: true,
+        lnd: args.lnd,
+        public_key: args.public_key,
+      },
+      cbk);
     }],
 
     // Node
