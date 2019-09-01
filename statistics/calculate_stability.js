@@ -1,3 +1,4 @@
+const notFound = -1;
 const numbers = ['1', '2'];
 const {parse} = Date;
 
@@ -41,7 +42,7 @@ module.exports = ({after, before, initially, nodes, updates}) => {
     throw new Error('ExpectedInitialValuesForStabilityCalculation');
   }
 
-  if (initially.find(n => !n || n.is_online === undefined)) {
+  if (initially.findIndex(n => !n || n.is_online === undefined) !== notFound) {
     throw new Error('ExpectedInitialStateForStabilityCalculation');
   }
 

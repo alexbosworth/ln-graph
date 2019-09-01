@@ -99,10 +99,68 @@ const tests = [
     description: 'Always online',
     expected: {changes: [0, 0], uptime: [24*hour, 24*hour]},
   },
+  {
+    args: {},
+    description: 'After is required',
+    error: 'ExpectedStartingDateForStabilityCalculation',
+  },
+  {
+    args: {after: new Date().toISOString()},
+    description: 'Before is required',
+    error: 'ExpectedEndingDateForStabilityCalculation',
+  },
+  {
+    args: {after: new Date().toISOString(), before: new Date().toISOString()},
+    description: 'Initial values are required',
+    error: 'ExpectedInitialValuesForStabilityCalculation',
+  },
+  {
+    args: {
+      after: new Date().toISOString(),
+      before: new Date().toISOString(),
+      initially: [{}, {}],
+    },
+    description: 'Initial values are required',
+    error: 'ExpectedInitialStateForStabilityCalculation',
+  },
+  {
+    args: {
+      after: new Date().toISOString(),
+      before: new Date().toISOString(),
+      initially: [null, null],
+    },
+    description: 'Initial object values are required',
+    error: 'ExpectedInitialStateForStabilityCalculation',
+  },
+  {
+    args: {
+      after: new Date().toISOString(),
+      before: new Date().toISOString(),
+      initially: [{is_online: true}, {is_online: true}],
+    },
+    description: 'Nodes are required',
+    error: 'ExpectedNodesForStabilityCalculation',
+  },
+  {
+    args: {
+      after: new Date().toISOString(),
+      before: new Date().toISOString(),
+      initially: [{is_online: true}, {is_online: true}],
+      nodes: ['a', 'b'],
+    },
+    description: 'Updates are required',
+    error: 'ExpectedUpdatesToCalculateStability',
+  },
 ];
 
-tests.forEach(({args, description, expected}) => {
-  return test(description, ({equal, end}) => {
+tests.forEach(({args, description, error, expected}) => {
+  return test(description, ({equal, end, throws}) => {
+    if (!!error) {
+      throws(() => calculateStability(args), new Error(error), 'Got error');
+
+      return end();
+    }
+
     const got = calculateStability(args);
 
     got.changes.forEach((count, i) => {
