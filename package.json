@@ -26,5 +26,5 @@
   "scripts": {
     "test": "tap test/chains/*.js test/dates/*.js test/lmdb/*.js test/statistics/*.js"
   },
-  "version": "2.2.8"
+  "version": "2.2.9"
 }
