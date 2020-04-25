@@ -1,19 +1,19 @@
 {
   "author": "Alex Bosworth",
   "dependencies": {
-    "async": "3.1.0",
-    "asyncjs-util": "1.1.2",
-    "aws-sdk": "2.596.0",
-    "bolt07": "1.4.4",
+    "async": "3.2.0",
+    "asyncjs-util": "1.2.2",
+    "aws-sdk": "2.663.0",
+    "bolt07": "1.5.0",
     "bn.js": "5.1.1",
-    "ln-service": "47.10.0",
-    "node-lmdb": "0.7.0",
+    "ln-service": "47.16.0",
+    "node-lmdb": "0.8.0",
     "vali-date": "1.0.0"
   },
   "description": "Record keeping for Lightning Network graph updates",
   "devDependencies": {
-    "rimraf": "3.0.0",
-    "tap": "14.10.5",
+    "rimraf": "3.0.2",
+    "tap": "14.10.7",
     "uuid": "3.3.3"
   },
   "license": "MIT",
@@ -26,5 +26,5 @@
   "scripts": {
     "test": "tap test/chains/*.js test/dates/*.js test/lmdb/*.js test/statistics/*.js"
   },
-  "version": "2.2.10"
+  "version": "2.2.11"
 }
