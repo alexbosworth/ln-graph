@@ -3,7 +3,7 @@ const {tmpdir} = require('os');
 
 const removeDir = require('rimraf');
 const {test} = require('tap');
-const uuidv4 = require('uuid/v4');
+const uuidv4 = require('uuid').v4;
 
 const {getLmdbItem} = require('./../../lmdb');
 const {lmdb} = require('./../../lmdb');
