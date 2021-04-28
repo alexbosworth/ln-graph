@@ -79,10 +79,10 @@ const tests = [
 ];
 
 tests.forEach(({args, description, expected}) => {
-  return test(description, ({deepEqual, end}) => {
+  return test(description, ({end, strictSame}) => {
     const {channel} = channelFromRow(args);
 
-    deepEqual(channel, expected.channel, 'Channel is derived from row');
+    strictSame(channel, expected.channel, 'Channel is derived from row');
 
     return end();
   });

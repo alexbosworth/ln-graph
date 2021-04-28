@@ -20,7 +20,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, expected}) => {
-  return test(description, ({deepEqual, end}) => {
+  return test(description, ({end, strictSame}) => {
     putLmdbItem({
       db: args.db,
       key: args.key,
@@ -28,7 +28,7 @@ tests.forEach(({args, description, expected}) => {
       value: expected.item,
     });
 
-    deepEqual(getLmdbItem(args).item, expected.item, 'Got item from lmdb');
+    strictSame(getLmdbItem(args).item, expected.item, 'Got item from lmdb');
 
     lmdb({path}).kill({});
 

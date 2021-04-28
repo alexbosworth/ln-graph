@@ -13,13 +13,22 @@ const tests = [
     description: 'Convert a decrementing number to a later date',
     expected: {date: '2009-01-08T19:27:40.000Z'},
   },
+  {
+    args: {number: undefined},
+    description: 'Converting a number requires a number',
+    error: 'ExpectedHexEncodedDecrementingDateNumber',
+  },
 ];
 
-tests.forEach(({args, description, expected}) => {
-  return test(description, ({equal, end}) => {
-    const {date} = dateForDecrementingNumber(args);
+tests.forEach(({args, description, error, expected}) => {
+  return test(description, ({equal, end, throws}) => {
+    if (!!error) {
+      throws(() => dateForDecrementingNumber(args), new Error(error), 'Err');
+    } else {
+      const {date} = dateForDecrementingNumber(args);
 
-    equal(date, expected.date, 'Derived date from decrementing number');
+      equal(date, expected.date, 'Derived date from decrementing number');
+    }
 
     return end();
   });

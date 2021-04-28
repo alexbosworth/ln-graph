@@ -13,13 +13,22 @@ const tests = [
     description: 'Convert a later date into decrementing number',
     expected: {number: 'fffffee14849281f'},
   },
+  {
+    args: {date: undefined},
+    description: 'A date is expected to convert to a decrementing number',
+    error: 'ExpectedDateToDeriveDecrementingNumber',
+  },
 ];
 
-tests.forEach(({args, description, expected}) => {
-  return test(description, ({equal, end}) => {
-    const {number} = decrementingNumberForDate(args);
+tests.forEach(({args, description, error, expected}) => {
+  return test(description, ({equal, end, throws}) => {
+    if (!!error) {
+      throws(() => decrementingNumberForDate(args), new Error(error), 'Err');
+    } else {
+      const {number} = decrementingNumberForDate(args);
 
-    equal(number, expected.number, 'Derived decrementing number for date');
+      equal(number, expected.number, 'Derived decrementing number for date');
+    }
 
     return end();
   });
