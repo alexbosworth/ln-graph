@@ -1,7 +1,7 @@
 {
   "author": "Alex Bosworth",
   "dependencies": {
-    "async": "3.2.1",
+    "async": "3.2.2",
     "asyncjs-util": "1.2.6",
     "aws-sdk": "2.1000.0",
     "bn.js": "5.2.0",
