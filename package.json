@@ -3,7 +3,7 @@
   "dependencies": {
     "async": "3.2.2",
     "asyncjs-util": "1.2.6",
-    "aws-sdk": "2.1000.0",
+    "aws-sdk": "2.1354.0",
     "bn.js": "5.2.0",
     "bolt07": "1.7.3",
     "ln-service": "54.3.3",
