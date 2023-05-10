@@ -7,9 +7,7 @@ const {take} = require('lodash');
 
 const checkChannelClosed = require('./check_channel_closed');
 const {checkLimit} = require('./constants');
-const {getChanRecordsForNode} = require('./../records');
 const getChannel = require('./get_channel');
-const {getChannelRecords} = require('./../records');
 const {getChannelRows} = require('./../rows');
 const {updateWindowMs} = require('./constants');
 
@@ -18,11 +16,10 @@ const {now} = Date;
 /** Get channels for a node
 
   {
-    [aws_access_key_id]: <AWS Access Key Id String>
-    [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
-    [aws_secret_access_key]: <AWS Secret Access Key String>
+    aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
+    aws_secret_access_key: <AWS Secret Access Key String>
     [limit]: <Limit of Channels to Return Number>
-    [lmdb_path]: <LMDB Path String>
     [lnd]: <LND Object>
     network: <Network Name String>
     public_key: <Public Key Hex String>
@@ -56,8 +53,8 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
-      if (!args.aws_access_key_id && !args.lmdb_path) {
-        return cbk([400, 'ExpectedAwsAccessKeyOrLmdbPath']);
+      if (!args.aws_access_key_id) {
+        return cbk([400, 'ExpectedAwsAccessKeyToGetChannelsForNode']);
       }
 
       if (!args.network) {
@@ -71,29 +68,8 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
-    // Get channels for node from lmdb
-    getRecords: ['validate', ({}, cbk) => {
-      if (!!args.aws_access_key_id) {
-        return cbk();
-      }
-
-      try {
-        return cbk(null, getChanRecordsForNode({
-          lmdb_path: args.lmdb_path,
-          network: args.network,
-          public_key: args.public_key,
-        }));
-      } catch (err) {
-        return cbk([500, 'FailedToGetChannelRecordsForNode', err]);
-      }
-    }],
-
     // Get channels for node from dynamodb
     getRows: ['validate', ({}, cbk) => {
-      if (!args.aws_access_key_id) {
-        return cbk();
-      }
-
       return getChannelRows({
         aws_access_key_id: args.aws_access_key_id,
         aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
@@ -106,8 +82,8 @@ module.exports = (args, cbk) => {
     }],
 
     // Channels for node
-    chansForNode: ['getRecords', 'getRows', ({getRecords, getRows}, cbk) => {
-      return cbk(null, getRecords || getRows);
+    chansForNode: ['getRows', ({getRows}, cbk) => {
+      return cbk(null, getRows);
     }],
 
     // Check channels to see if they are closed
@@ -133,7 +109,6 @@ module.exports = (args, cbk) => {
           aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
           aws_secret_access_key: args.aws_secret_access_key,
           id: channel.id,
-          lmdb_path: args.lmdb_path,
           lnd: args.lnd,
           network: args.network,
         },
@@ -160,7 +135,6 @@ module.exports = (args, cbk) => {
           aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
           aws_secret_access_key: args.aws_secret_access_key,
           id: channel.id,
-          lmdb_path: args.lmdb_path,
           lnd: args.lnd,
           network: args.network,
         },

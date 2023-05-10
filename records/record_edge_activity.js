@@ -9,21 +9,18 @@ const {chansDb} = require('./constants');
 const {ddb} = require('./../dynamodb');
 const {decrementingNumberForDate} = require('./../dates');
 const {getChannelRow} = require('./../rows');
-const {lmdb} = require('./../lmdb');
 const {notFound} = require('./constants');
 const {putDdbItem} = require('./../dynamodb');
-const {putLmdbItem} = require('./../lmdb');
 const {updateDdbItem} = require('./../dynamodb');
 
 /** Record edge activity
 
   {
     attempted_at: <Activity Attempted At ISO8601 Date String>
-    [aws_access_key_id]: <AWS Access Key Id String>
-    [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
-    [aws_secret_access_key]: <AWS Secret Access Key String>
+    aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
+    aws_secret_access_key: <AWS Secret Access Key String>
     channel: <Standard Format Channel Id String>
-    lmdb_path: <LMDB Path String>
     network: <Network Name String>
     to_public_key: <Activity Towards Public Key Hex String>
     tokens: <Tokens Number>
@@ -39,12 +36,20 @@ module.exports = (args, cbk) => {
         return cbk([400, 'ExpectedAttemptedAtDateForEdgeActivity']);
       }
 
-      if (!args.channel) {
-        return cbk([400, 'ExpectedChannelIdForEdgeActivity']);
+      if (!args.aws_access_key_id) {
+        return cbk([400, 'ExpectedAwsAccessKeyIdToRecordEdgeActivity']);
       }
 
-      if (!args.lmdb_path) {
-        return cbk([400, 'ExpectedLmdbPathForEdgeActivity']);
+      if (!args.aws_dynamodb_table_prefix) {
+        return cbk([400, 'ExpectedTablePrefixForEdgeActivityRecord']);
+      }
+
+      if (!args.aws_secret_access_key) {
+        return cbk([400, 'ExpectedSecretKeyForEdgeActivityRecord']);
+      }
+
+      if (!args.channel) {
+        return cbk([400, 'ExpectedChannelIdForEdgeActivity']);
       }
 
       if (!args.network || !chainIds[args.network]) {
@@ -70,18 +75,6 @@ module.exports = (args, cbk) => {
     chain: ['validate', ({}, cbk) => cbk(null, chainIds[args.network])],
 
     ddb: ['validate', ({}, cbk) => {
-      if (!args.aws_access_key_id) {
-        return cbk();
-      }
-
-      if (!args.aws_dynamodb_table_prefix) {
-        return cbk([400, 'ExpectedTablePrefixForEdgeActivityRecord']);
-      }
-
-      if (!args.aws_secret_access_key) {
-        return cbk([400, 'ExpectedSecretKeyForEdgeActivityRecord']);
-      }
-
       try {
         const db = ddb({
           access_key_id: args.aws_access_key_id,
@@ -96,10 +89,6 @@ module.exports = (args, cbk) => {
 
     // Get current dynamodb row
     getChannel: ['validate', ({}, cbk) => {
-      if (!args.aws_access_key_id) {
-        return cbk();
-      }
-
       return getChannelRow({
         aws_access_key_id: args.aws_access_key_id,
         aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
@@ -121,10 +110,6 @@ module.exports = (args, cbk) => {
 
     // Record activity in ddb
     putInDynamodb: ['chain', 'ddb', 'id', ({chain, ddb, id}, cbk) => {
-      if (!ddb) {
-        return cbk();
-      }
-
       const db = ddb;
       const edge = `${args.to_public_key}${chain}${id}`;
       const table = `${args.aws_dynamodb_table_prefix}-${activityDb}`;
@@ -140,32 +125,6 @@ module.exports = (args, cbk) => {
       return putDdbItem({db, item, table}, cbk);
     }],
 
-    // Record activity in lmdb
-    putInLmdb: ['chain', 'id', ({chain, id}, cbk) => {
-      let recordNumber;
-
-      try {
-        const {number} = decrementingNumberForDate({date: args.attempted_at});
-
-        recordNumber = number;
-      } catch (err) {
-        return cbk([500, 'ExpectedValidEdgeNumber']);
-      }
-
-      try {
-        putLmdbItem({
-          db: activityDb,
-          key: [args.to_public_key, chain, id, recordNumber].join(''),
-          lmdb: lmdb({path: args.lmdb_path}),
-          value: {tokens: args.tokens, type: args.type},
-        });
-
-        return cbk();
-      } catch (err) {
-        return cbk([500, 'FailedToRecordEdgeActivity', err]);
-      }
-    }],
-
     // Write the last edge activity into the channel record directly
     adjustDynamodbMetadata: [
       'chain',
@@ -174,11 +133,6 @@ module.exports = (args, cbk) => {
       'id',
       ({chain, ddb, getChannel, id}, cbk) =>
     {
-      // Exit early when not writing to dynamodb
-      if (!ddb) {
-        return cbk();
-      }
-
       const {channel} = getChannel;
 
       // Exit early when this is an unknown channel

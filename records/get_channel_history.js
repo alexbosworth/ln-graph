@@ -11,9 +11,9 @@ const {updatesDb} = require('./constants');
 
   {
     [after]: <After ISO 8601 Date String>
-    [aws_access_key_id]: <AWS Access Key Id String>
-    [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
-    [aws_secret_access_key]: <AWS Secret Access Key String>
+    aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
+    aws_secret_access_key: <AWS Secret Access Key String>
     id: <Standard Format Channel Id String>
     [limit]: <Limit of Historical Entries Number>
     network: <Network Name String>

@@ -1,4 +1,4 @@
-const {test} = require('tap');
+const {test} = require('@alexbosworth/tap');
 
 const channelFromRow = require('./../../rows/channel_from_row');
 

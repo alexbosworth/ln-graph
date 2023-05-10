@@ -12,27 +12,22 @@ const {ddb} = require('./../dynamodb');
 const {decBase} = require('./constants');
 const {decrementingNumberForDate} = require('./../dates');
 const {getDdbItem} = require('./../dynamodb');
-const {getLmdbItem} = require('./../lmdb');
-const {lmdb} = require('./../lmdb');
 const {nodeChannelsDb} = require('./constants');
 const {nodeNumbers} = require('./constants');
 const {nodesDb} = require('./constants');
 const {putDdbItem} = require('./../dynamodb');
-const {putLmdbItem} = require('./../lmdb');
 const {updateChannelMetadata} = require('./../rows');
 const {updateDdbItem} = require('./../dynamodb');
-const {updateLmdbItem} = require('./../lmdb');
 const {updatesDb} = require('./constants');
 
 /** Record a node update to the database
 
   {
-    [aws_access_key_id]: <AWS Access Key Id String>
-    [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
-    [aws_secret_access_key]: <AWS Secret Access Key String>
+    aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
+    aws_secret_access_key: <AWS Secret Access Key String>
     capacity: <Capacity Tokens Number>
     id: <Standard Format Channel Id String>
-    [lmdb_path]: <LMDB Database Path>
     network: <Network Name String>
     [node1_base_fee_mtokens]: <Base Fee Millitokens String>
     [node1_cltv_delta]: <CLTV Delta Number>
@@ -95,6 +90,18 @@ module.exports = (args, cbk) => {
 
     // Check arguments
     validate: cbk => {
+      if (!args.aws_access_key_id) {
+        return cbk([400, 'ExpectedAwsToRegisterChannelUpdate']);
+      }
+
+      if (!args.aws_dynamodb_table_prefix) {
+        return cbk([400, 'ExpectedAwsTablePrefixForChannelUpdate']);
+      }
+
+      if (!args.aws_secret_access_key) {
+        return cbk([400, 'ExpectedAwsSecretAccessKeyForChannelUpdate']);
+      }
+
       if (args.capacity === undefined) {
         return cbk([400, 'ExpectedCapacityForChannelUpdate']);
       }
@@ -133,19 +140,6 @@ module.exports = (args, cbk) => {
 
     // Get the dynamodb database context
     db: ['validate', ({}, cbk) => {
-      // Exit early when AWS is not configured
-      if (!args.aws_access_key_id) {
-        return cbk();
-      }
-
-      if (!args.aws_dynamodb_table_prefix) {
-        return cbk([400, 'ExpectedAwsTablePrefixForChannelUpdate']);
-      }
-
-      if (!args.aws_secret_access_key) {
-        return cbk([400, 'ExpectedAwsSecretAccessKeyForChannelUpdate']);
-      }
-
       try {
         return cbk(null, ddb({
           access_key_id: args.aws_access_key_id,
@@ -162,20 +156,6 @@ module.exports = (args, cbk) => {
         return cbk(null, rawChanId({channel: args.id}).id);
       } catch (err) {
         return cbk([400, 'ExpectedValidChannelIdToRegisterChanUpdate', err]);
-      }
-    }],
-
-    // Get the lmdb database context
-    lmdb: ['validate', ({}, cbk) => {
-      // Exit early when the lmdb database path is not configured
-      if (!args.lmdb_path) {
-        return cbk();
-      }
-
-      try {
-        return cbk(null, lmdb({path: args.lmdb_path}));
-      } catch (err) {
-        return cbk([500, 'FailedToOpenLmdbForChannelUpdate', err]);
       }
     }],
 
@@ -197,11 +177,6 @@ module.exports = (args, cbk) => {
 
     // Get the current state of the channel from dynamodb
     getChanFromDdb: ['db', 'key', ({db, key}, cbk) => {
-      // Exit early when there is no dynamodb configured
-      if (!db) {
-        return cbk();
-      }
-
       return getDdbItem({
         db,
         table: `${args.aws_dynamodb_table_prefix}-${chansDb}`,
@@ -217,58 +192,12 @@ module.exports = (args, cbk) => {
       'updatedAt',
       ({db, key, updatedAt}, cbk) =>
     {
-      // Exit early when there is no dynamodb configured
-      if (!db) {
-        return cbk();
-      }
-
       return getDdbItem({
         db,
         table: `${args.aws_dynamodb_table_prefix}-${updatesDb}`,
         where: {key, updated_at: updatedAt},
       },
       cbk);
-    }],
-
-    // Get the current state of the channel from lmdb
-    getChanFromLmdb: ['key', 'lmdb', ({key, lmdb}, cbk) => {
-      // Exit early when not using lmdb
-      if (!lmdb) {
-        return cbk();
-      }
-
-      try {
-        return cbk(null, getLmdbItem({key, lmdb, db: chansDb}));
-      } catch (err) {
-        return cbk([500, 'FailedToGetChannelFromLmdb', err]);
-      }
-    }],
-
-    // Check to see if this update was already recorded
-    getUpdateFromLmdb: [
-      'key',
-      'lmdb',
-      'updatedAt',
-      ({key, lmdb, updatedAt}, cbk) =>
-    {
-      // Exit early when lmdb is not configured
-      if (!lmdb) {
-        return cbk();
-      }
-
-      let updateNumber;
-
-      try {
-        updateNumber = decrementingNumberForDate({date: updatedAt}).number;
-      } catch (err) {
-        return cbk([500, 'FailedToDeriveUpdateNumberLookingForUpdate', err]);
-      }
-
-      return cbk(null, getLmdbItem({
-        lmdb,
-        db: updatesDb,
-        key: `${key}${updateNumber}`,
-      }));
     }],
 
     // Ddb channel update row
@@ -291,26 +220,6 @@ module.exports = (args, cbk) => {
       }
     }],
 
-    // Lmdb channel update row
-    lmdbChanUpdate: [
-      'attributeUpdates',
-      'getChanFromLmdb',
-      ({attributeUpdates, getChanFromLmdb}, cbk) =>
-    {
-      if (!getChanFromLmdb) {
-        return cbk();
-      }
-
-      try {
-        return cbk(null, channelWithUpdates({
-          item: getChanFromLmdb.item || {},
-          update: attributeUpdates,
-        }));
-      } catch (err) {
-        return cbk([500, 'FailedToDeriveLmdbChannelWithUpdates', err]);
-      }
-    }],
-
     // Put the channel update in dynamodb
     createDdbUpdate: [
       'db',
@@ -322,7 +231,7 @@ module.exports = (args, cbk) => {
       ({db, ddbChanUpdate, getUpdateFromDdb, key, updatedAt}, cbk) =>
     {
       // Exit early when there's no need to create a history record
-      if (!db || !ddbChanUpdate || !ddbChanUpdate.updates) {
+      if (!ddbChanUpdate || !ddbChanUpdate.updates) {
         return cbk();
       }
 
@@ -356,60 +265,6 @@ module.exports = (args, cbk) => {
       return putDdbItem({db, item, table}, cbk);
     }],
 
-    // Put the channel update in lmdb
-    createLmdbUpdate: [
-      'getUpdateFromLmdb',
-      'key',
-      'lmdb',
-      'lmdbChanUpdate',
-      'updatedAt',
-      ({getUpdateFromLmdb, key, lmdb, lmdbChanUpdate, updatedAt}, cbk) =>
-    {
-      // Exit early when writing the update is not required
-      if (!lmdb || !lmdbChanUpdate || !lmdbChanUpdate.updates) {
-        return cbk();
-      }
-
-      if (!getUpdateFromLmdb || !!getUpdateFromLmdb.item) {
-        return cbk();
-      }
-
-      let updateNumber;
-      const {updates} = lmdbChanUpdate;
-
-      try {
-        updateNumber = decrementingNumberForDate({date: updatedAt}).number;
-      } catch (err) {
-        return cbk([500, 'FailedToDeriveUpdateNumberForUpdateDate', err]);
-      }
-
-      try {
-        return cbk(null, putLmdbItem({
-          lmdb,
-          db: updatesDb,
-          key: `${key}${updateNumber}`,
-          value: {
-            node1_base_fee_mtokens: updates.node1_base_fee_mtokens,
-            node1_cltv_delta: updates.node1_cltv_delta,
-            node1_fee_rate: updates.node1_fee_rate,
-            node1_is_disabled: updates.node1_is_disabled,
-            node1_min_htlc_mtokens: updates.node1_min_htlc_mtokens,
-            node1_public_key: updates.node1_public_key,
-            node1_updated_at: updates.node1_updated_at,
-            node2_base_fee_mtokens: updates.node2_base_fee_mtokens,
-            node2_cltv_delta: updates.node2_cltv_delta,
-            node2_fee_rate: updates.node2_fee_rate,
-            node2_is_disabled: updates.node2_is_disabled,
-            node2_min_htlc_mtokens: updates.node2_min_htlc_mtokens,
-            node2_public_key: updates.node2_public_key,
-            node2_updated_at: updates.node2_updated_at,
-          },
-        }));
-      } catch (err) {
-        return cbk([500, 'FailedToPutLmdbItemWhenRegisteringChanUpdate', err]);
-      }
-    }],
-
     // Create ddb row if necessary
     createDdbChan: [
       'db',
@@ -420,7 +275,7 @@ module.exports = (args, cbk) => {
       ({db, ddbChanUpdate, getChanFromDdb, key, updatedAt}, cbk) =>
     {
       // Exit early when there is no need to create the channel
-      if (!db || !getChanFromDdb || !ddbChanUpdate) {
+      if (!getChanFromDdb || !ddbChanUpdate) {
         return cbk();
       }
 
@@ -457,68 +312,6 @@ module.exports = (args, cbk) => {
       cbk);
     }],
 
-    // Create lmdb row if necessary
-    createLmdbChan: [
-      'chain',
-      'getChanFromLmdb',
-      'key',
-      'lmdb',
-      'lmdbChanUpdate',
-      ({chain, getChanFromLmdb, key, lmdb, lmdbChanUpdate}, cbk) =>
-    {
-      // Exit early when there is no need to create the lmdb channel
-      if (!lmdb || !lmdbChanUpdate || !getChanFromLmdb) {
-        return cbk();
-      }
-
-      if (!lmdbChanUpdate.updated || !!getChanFromLmdb.item) {
-        return cbk();
-      }
-
-      const {updated} = lmdbChanUpdate;
-
-      try {
-        putLmdbItem({
-          key,
-          lmdb,
-          db: chansDb,
-          fresh: ['key'],
-          value: {
-            capacity: args.capacity,
-            node1_base_fee_mtokens: updated.node1_base_fee_mtokens,
-            node1_cltv_delta: updated.node1_cltv_delta,
-            node1_fee_rate: updated.node1_fee_rate,
-            node1_is_disabled: updated.node1_is_disabled,
-            node1_min_htlc_mtokens: updated.node1_min_htlc_mtokens,
-            node1_public_key: updated.node1_public_key,
-            node1_updated_at: updated.node1_updated_at,
-            node2_base_fee_mtokens: updated.node2_base_fee_mtokens,
-            node2_cltv_delta: updated.node2_cltv_delta,
-            node2_fee_rate: updated.node2_fee_rate,
-            node2_is_disabled: updated.node2_is_disabled,
-            node2_min_htlc_mtokens: updated.node2_min_htlc_mtokens,
-            node2_public_key: updated.node2_public_key,
-            node2_updated_at: updated.node2_updated_at,
-            transaction_id: args.transaction_id,
-            transaction_vout: args.transaction_vout,
-          },
-        });
-
-        const value = {};
-
-        // Create links from the pubkeys to the channel id
-        nodeNumbers
-          .map(n => lmdbChanUpdate.updates[`node${n}_public_key`])
-          .filter(n => !!n)
-          .map(pubKey => ({lmdb, db: nodeChannelsDb, key: `${pubKey}${key}`}))
-          .forEach(({db, key, lmdb}) => putLmdbItem({db, key, lmdb, value}));
-
-        return cbk();
-      } catch (err) {
-        return cbk([500, 'FailedToPutChannelUpdateItemInLmdb', err]);
-      }
-    }],
-
     // Update existing channel in ddb
     updateDdbChan: [
       'db',
@@ -529,7 +322,7 @@ module.exports = (args, cbk) => {
       ({db, ddbChanUpdate, getChanFromDdb, key, updatedAt}, cbk) =>
     {
       // Exit early when there is no existing channel to update
-      if (!db || !getChanFromDdb || !ddbChanUpdate) {
+      if (!getChanFromDdb || !ddbChanUpdate) {
         return cbk();
       }
 
@@ -560,48 +353,6 @@ module.exports = (args, cbk) => {
       return updateDdbItem({changes, db, expect, table, where: {key}}, cbk);
     }],
 
-    // Update existing channel in lmdb
-    updateLmdbChannel: [
-      'getChanFromLmdb',
-      'key',
-      'lmdb',
-      'lmdbChanUpdate',
-      ({getChanFromLmdb, key, lmdb, lmdbChanUpdate}, cbk) =>
-    {
-      // Exit early when there is no need to update the lmdb channel
-      if (!lmdb || !getChanFromLmdb || !lmdbChanUpdate) {
-        return cbk();
-      }
-
-      if (!getChanFromLmdb.item || !lmdbChanUpdate.updates) {
-        return cbk();
-      }
-
-      const changes = {};
-      const expect = {updated_at: getChanFromLmdb.item.updated_at};
-
-      Object.keys(lmdbChanUpdate.updates)
-        .filter(attr => lmdbChanUpdate.updates[attr] !== undefined)
-        .forEach(attr => changes[attr] = {set: lmdbChanUpdate.updates[attr]});
-
-      try {
-        updateLmdbItem({changes, expect, key, lmdb, db: chansDb});
-
-        const value = {};
-
-        // Create links from the pubkeys to the channel id
-        nodeNumbers
-          .map(n => lmdbChanUpdate.updates[`node${n}_public_key`])
-          .filter(n => !!n)
-          .map(pubKey => ({lmdb, db: nodeChannelsDb, key: `${pubKey}${key}`}))
-          .forEach(({db, key, lmdb}) => putLmdbItem({db, key, lmdb, value}));
-
-        return cbk();
-      } catch (err) {
-        return cbk([500, 'FailedToUpdateChannelItemInLmdb', err]);
-      }
-    }],
-
     // Update dynamodb's node metadata on the channel
     updateDdbChannelNodeMetadata: [
       'db',
@@ -611,7 +362,7 @@ module.exports = (args, cbk) => {
       ({db, ddbChanUpdate, getChanFromDdb, key}, cbk) =>
     {
       // Exit early when not updating dynamodb or nothing has been updated
-      if (!db || !ddbChanUpdate || !ddbChanUpdate.updates || !getChanFromDdb) {
+      if (!ddbChanUpdate || !ddbChanUpdate.updates || !getChanFromDdb) {
         return cbk();
       }
 

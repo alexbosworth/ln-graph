@@ -6,26 +6,21 @@ const changesForNode = require('./changes_for_node');
 const {colorLen} = require('./constants');
 const {ddb} = require('./../dynamodb');
 const {getDdbItem} = require('./../dynamodb');
-const {getLmdbItem} = require('./../lmdb');
-const {lmdb} = require('./../lmdb');
 const networks = require('./conf/networks');
 const {nodesDb} = require('./constants');
 const {notFound} = require('./constants');
 const {pkHexLen} = require('./constants');
 const {putDdbItem} = require('./../dynamodb');
-const {putLmdbItem} = require('./../lmdb');
 const {updateDdbItem} = require('./../dynamodb');
-const {updateLmdbItem} = require('./../lmdb');
 
 /** Record a node update to the database
 
   {
     alias: <Alias String>
     color: <Color String>
-    [aws_access_key_id]: <AWS Access Key Id String>
-    [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
-    [aws_secret_access_key]: <AWS Secret Access Key String>
-    [lmdb_path]: <LMDB Path String>
+    aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
+    aws_secret_access_key: <AWS Secret Access Key String>
     network: <Network Name String>
     public_key: <Node Public Key Hex String>
     [sockets]: [<Socket String>]
@@ -42,6 +37,18 @@ module.exports = (args, cbk) => {
     validate: cbk => {
       if (args.alias === undefined) {
         return cbk([400, 'ExpectedNodeAliasForNodeUpdateRecording']);
+      }
+
+      if (!args.aws_access_key_id) {
+        return cbk([400, 'ExpectedAwsAccessToRegisterNodeUpdate']);
+      }
+
+      if (!args.aws_dynamodb_table_prefix) {
+        return cbk([400, 'ExpectedAwsDynamodbTablePrefixForNodeUpdate']);
+      }
+
+      if (!args.aws_secret_access_key) {
+        return cbk([400, 'ExpectedAwsSecretAccessKeyForNodeUpdateRegister']);
       }
 
       if (!args.color || args.color.length !== colorLen) {
@@ -67,20 +74,13 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
+    // Chain for network
+    chain: ['validate', ({}, cbk) => {
+      return cbk(null, networks.chain_ids[args.network]);
+    }],
+
     // Db connection
     ddb: ['validate', ({}, cbk) => {
-      if (!args.aws_access_key_id) {
-        return cbk();
-      }
-
-      if (!args.aws_dynamodb_table_prefix) {
-        return cbk([400, 'ExpectedAwsDynamodbTablePrefixForNodeUpdate']);
-      }
-
-      if (!args.aws_secret_access_key) {
-        return cbk([400, 'ExpectedAwsSecretAccessKeyForNodeUpdateRegister']);
-      }
-
       const key = args.aws_access_key_id;
       const secret = args.aws_secret_access_key;
 
@@ -91,51 +91,14 @@ module.exports = (args, cbk) => {
       }
     }],
 
-    // Chain for network
-    chain: ['validate', ({}, cbk) => {
-      return cbk(null, networks.chain_ids[args.network]);
-    }],
-
-    // Get the lmdb database context
-    lmdb: ['validate', ({}, cbk) => {
-      if (!args.lmdb_path) {
-        return cbk();
-      }
-
-      try {
-        return cbk(null, lmdb({path: args.lmdb_path}));
-      } catch (err) {
-        return cbk([500, 'FailedToOpenLmdbForNodeUpdate', err]);
-      }
-    }],
-
     // Get existing node
     getDdbNode: ['ddb', ({ddb}, cbk) => {
-      if (!ddb) {
-        return cbk();
-      }
-
       return getDdbItem({
         db: ddb,
         table: `${args.aws_dynamodb_table_prefix}-${nodesDb}`,
         where: {key: args.public_key},
       },
       cbk);
-    }],
-
-    // Get the node details from lmdb
-    getLmdbNode: ['lmdb', ({lmdb}, cbk) => {
-      if (!lmdb) {
-        return cbk();
-      }
-
-      try {
-        const item = getLmdbItem({lmdb, db: nodesDb, key: args.public_key});
-
-        return cbk(null, item);
-      } catch (err) {
-        return cbk([500, 'FailedToGetChannelFromLmdb', err]);
-      }
     }],
 
     // Node
@@ -167,10 +130,6 @@ module.exports = (args, cbk) => {
       'node',
       ({ddb, getDdbNode, node}, cbk) =>
     {
-      if (!ddb) {
-        return cbk();
-      }
-
       // Exit early when there is no need to create the node
       if (!!getDdbNode.item && !!getDdbNode.item.rev) {
         return cbk();
@@ -184,33 +143,6 @@ module.exports = (args, cbk) => {
       return putDdbItem({db, fresh, item, table}, err => cbk(err, item));
     }],
 
-    // Create lmdb node if necessary
-    createLmdbNode: [
-      'getLmdbNode',
-      'lmdb',
-      'node',
-      ({getLmdbNode, lmdb, node}, cbk) =>
-    {
-      if (!lmdb) {
-        return cbk();
-      }
-
-      // Exit early when there is no need to create the node
-      if (!!getLmdbNode.item && !!getLmdbNode.item.rev) {
-        return cbk();
-      }
-
-      const {key} = node;
-
-      try {
-        putLmdbItem({key, lmdb, db: nodesDb, fresh: ['key'], value: node});
-
-        return cbk();
-      } catch (err) {
-        return cbk([500, 'FailedToPutNodeInLmdb', err]);
-      }
-    }],
-
     // Update node if necessary
     updateDdbNode: [
       'chain',
@@ -218,10 +150,6 @@ module.exports = (args, cbk) => {
       'getDdbNode',
       ({chain, ddb, getDdbNode}, cbk) =>
     {
-      if (!ddb) {
-        return cbk();
-      }
-
       const {changes} = changesForNode({
         chain,
         existing: getDdbNode.item,
@@ -249,48 +177,6 @@ module.exports = (args, cbk) => {
 
         return cbk(null, {rev: getDdbNode.item.rev + [args.length]});
       });
-    }],
-
-    // Update node if necessary
-    updateLmdbNode: [
-      'chain',
-      'getLmdbNode',
-      'lmdb',
-      ({chain, getLmdbNode, lmdb}, cbk) =>
-    {
-      if (!lmdb) {
-        return cbk();
-      }
-
-      const {changes} = changesForNode({
-        chain,
-        existing: getLmdbNode.item,
-        update: {
-          alias: args.alias,
-          color: args.color,
-          sockets: args.sockets,
-          updated_at: args.updated_at,
-        },
-      });
-
-      // Exit early when there are no changes to commit
-      if (!changes) {
-        return cbk();
-      }
-
-      try {
-        updateLmdbItem({
-          changes,
-          lmdb,
-          db: nodesDb,
-          expect: {rev: getLmdbNode.item.rev},
-          key: args.public_key,
-        });
-
-        return cbk();
-      } catch (err) {
-        return cbk([500, 'FailedToUpdateNodeInLmdb', err]);
-      }
     }],
 
     // Updated (from the ddb perspective)

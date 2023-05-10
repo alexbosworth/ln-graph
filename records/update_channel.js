@@ -10,16 +10,15 @@ const serverErr = 500;
 /** Update a channel record
 
   {
-    [aws_access_key_id]: <AWS Access Key Id String>
-    [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
-    [aws_secret_access_key]: <AWS Secret Access Key String>
+    aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
+    aws_secret_access_key: <AWS Secret Access Key String>
     [base_fee_mtokens]: <Channel Base Fee Millitokens String>
     capacity: <Channel Capacity Tokens Number>
     id: <Standard Format Channel Id String>
     [cltv_delta]: <Channel CLTV Delta Number>
     [fee_rate]: <Channel Feel Rate In Millitokens Per Million Number>
     [is_disabled]: <Channel Is Disabled Bool>
-    [lmdb_path]: <LMDB Path String>
     [min_htlc_mtokens]: <Channel Minimum HTLC Millitokens String>
     network: <Network Name String>
     [public_keys]: [<Announcing Public Key>, <Target Public Key String>]
@@ -82,7 +81,6 @@ module.exports = (args, cbk) => {
         aws_secret_access_key: args.aws_secret_access_key,
         capacity: args.capacity,
         id: args.id,
-        lmdb_path: args.lmdb_path,
         network: args.network,
         node1_base_fee_mtokens: update.node1_base_fee_mtokens,
         node1_cltv_delta: update.node1_cltv_delta,

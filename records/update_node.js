@@ -13,10 +13,9 @@ const serverErr = 500;
   {
     alias: <Alias String>
     color: <Color String>
-    [aws_access_key_id]: <AWS Access Key Id String>
-    [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
-    [aws_secret_access_key]: <AWS Secret Access Key String>
-    [lmdb_path]: <LMDB Database Path String>
+    aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
+    aws_secret_access_key: <AWS Secret Access Key String>
     network: <Network Name String>
     public_key: <Node Public Key Hex String>
     [sockets]: [<Socket String>]
@@ -41,7 +40,6 @@ module.exports = (args, cbk) => {
         aws_dynamodb_table_prefix: args.aws_dynamodb_table_prefix,
         aws_access_key_id: args.aws_access_key_id,
         aws_secret_access_key: args.aws_secret_access_key,
-        lmdb_path: args.lmdb_path,
         network: args.network,
         public_key: args.public_key,
         sockets: args.sockets,

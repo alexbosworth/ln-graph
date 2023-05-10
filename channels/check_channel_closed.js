@@ -9,11 +9,10 @@ const {unknownCloseHeight} = require('./constants');
 /** Check if a channel is closed and update it as closed if it is
 
   {
-    [aws_access_key_id]: <AWS Access Key Id String>
-    [aws_dynamodb_table_prefix]: <AWS DynamoDb Table Name Prefix String>
-    [aws_secret_access_key]: <AWS Secret Access Key String>
+    aws_access_key_id: <AWS Access Key Id String>
+    aws_dynamodb_table_prefix: <AWS DynamoDb Table Name Prefix String>
+    aws_secret_access_key: <AWS Secret Access Key String>
     id: <Standard Channel Id String>
-    [lmdb_path]: <LMDB Path String>
     lnd: <LND Object>
     network: <Network Name String>
   }
@@ -22,8 +21,8 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
-      if (!args.aws_access_key_id && !args.lmdb_path) {
-        return cbk([400, 'ExpectedAwsOrLmdbForCloseChannelCheck']);
+      if (!args.aws_access_key_id) {
+        return cbk([400, 'ExpectedAwsForCloseChannelCheck']);
       }
 
       if (!args.id) {
@@ -66,7 +65,8 @@ module.exports = (args, cbk) => {
 
     // Mark channel as closed
     markChannelClosed: ['getChannel', ({getChannel}, cbk) => {
-      if (!args.aws_access_key_id || !getChannel.close_height) {
+      // Exit early when there is no close information
+      if (!getChannel.close_height) {
         return cbk();
       }
 
@@ -76,7 +76,6 @@ module.exports = (args, cbk) => {
         aws_secret_access_key: args.aws_secret_access_key,
         close_height: unknownCloseHeight,
         id: args.id,
-        lmdb_path: args.lmdb_path,
         network: args.network,
       },
       cbk);
@@ -84,10 +83,7 @@ module.exports = (args, cbk) => {
 
     // Update channel updated_at to avoid re-checking again too soon
     update: ['getChannel', ({getChannel}, cbk) => {
-      if (!args.aws_access_key_id) {
-        return cbk();
-      }
-
+      // Exit early when there is no close information
       if (!!getChannel.close_height || !getChannel.updated_at) {
         return cbk();
       }
