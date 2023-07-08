@@ -2,18 +2,15 @@
   "author": "Alex Bosworth",
   "dependencies": {
     "async": "3.2.4",
-    "asyncjs-util": "1.2.11",
-    "aws-sdk": "2.1375.0",
+    "asyncjs-util": "1.2.12",
+    "aws-sdk": "2.1413.0",
     "bn.js": "5.2.1",
-    "bolt07": "1.8.3",
-    "ln-service": "56.3.0",
+    "bolt07": "1.8.4",
+    "ln-service": "56.8.0",
     "lodash": "4.17.21",
     "vali-date": "1.0.0"
   },
   "description": "Record keeping for Lightning Network graph updates",
-  "devDependencies": {
-    "@alexbosworth/tap": "15.0.12"
-  },
   "license": "MIT",
   "main": "index.js",
   "name": "ln-graph",
@@ -22,7 +19,7 @@
     "url": "https://github.com/alexbosworth/ln-graph.git"
   },
   "scripts": {
-    "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/chains/*.js test/dates/*.js test/statistics/*.js"
+    "test": "npx nyc@15.1.0 node --experimental-test-coverage --test"
   },
-  "version": "3.0.0"
+  "version": "3.0.1"
 }

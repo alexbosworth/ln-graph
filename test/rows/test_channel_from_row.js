@@ -1,4 +1,5 @@
-const {test} = require('@alexbosworth/tap');
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
 
 const channelFromRow = require('./../../rows/channel_from_row');
 
@@ -79,10 +80,10 @@ const tests = [
 ];
 
 tests.forEach(({args, description, expected}) => {
-  return test(description, ({end, strictSame}) => {
+  return test(description, (t, end) => {
     const {channel} = channelFromRow(args);
 
-    strictSame(channel, expected.channel, 'Channel is derived from row');
+    deepEqual(channel, expected.channel, 'Channel is derived from row');
 
     return end();
   });

@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.0
+## 3.0.1
 
 - Support for LMDB is eliminated
 - `getAllChannels`, `getAllNodes`, `getChanRecordsForNode`, `getChannelRecord`,
